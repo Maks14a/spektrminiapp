@@ -345,7 +345,7 @@
                 if (!isDown) return;
                 e.preventDefault(); // Предотвращает выделение текста
                 const x = e.pageX - eventsCarousel.offsetLeft;
-                const walk = (x - startX) * 5; // Множитель можно настроить для скорости
+                const walk = (x - startX) * 3; // Множитель можно настроить для скорости
                 eventsCarousel.scrollLeft = scrollLeft - walk;
             });
 
