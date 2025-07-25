@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>СПЕКТР</title>
+
+    <link rel="stylesheet" href="styles.css" />
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        /* затемнение фона */
+        .dikidi-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none; /* Не реагирует на события, когда скрыт */
+            transition: opacity .4s ease; /* Плавное появление/исчезновение за 0.25s */
+        }
+        .dikidi-modal.show {
+            opacity: 1;
+            pointer-events: auto; /* Реагирует на события, когда показан */
+        }
+
+        /* сам «поп‑ап»: адаптивный iframe */
+        .dikidi-iframe {
+            width: 90vw;
+            height: 80vh;
+            max-width: 740px;
+            max-height: 670px;
+            border: none;
+            border-radius: 12px;
+            background: #fff;
+            /* Hide iframe until loaded */
+            opacity: 0;
+            transition: opacity .4s ease; /* Плавное появление iframe после загрузки */
+        }
+        .dikidi-iframe.loaded {
+            opacity: 1;
+        }
+
+        /* крестик закрыть */
+        .dikidi-close {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            font-size: 36px;
+            color: #fff;
+            cursor: pointer;
+            user-select: none;
+            line-height: 1;
+        }
+
+        /* Стили для лоадера */
+        .dikidi-loader {
+            border: 8px solid #555; /* Темно-серый для тела круга */
+            border-top: 8px solid rgb(240, 191, 76); /* Оранжевый RGB: 240, 191, 76 для вращающейся части */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 2s linear infinite;
+            position: absolute; /* Position over the iframe area */
+            z-index: 2001; /* Ensure it's above the modal background but below close button */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="intro-screen">
+        <video id="intro-video" autoplay muted playsinline>
+            <source src="превью.mp4" type="video/mp4" />
+        </video>
+    </div>
+
+    <div class="container" id="main-content">
+        <img src="logo2.png" alt="СПЕКТР" class="logo" />
+        <div class="buttons">
+            <button id="show-appointment-btn" class="btn btn-primary">ЗАПИСАТЬСЯ</button>
+            <button id="show-events-btn" class="btn btn-outline">ЕВЕНТЫ</button>
+        </div>
+
+        <img src="noti.jpg" alt="ноты" class="circle-img circle1" />
+        <div class="circle-text circle1-text">Здесь будут буковы</div>
+
+        <img src="microphone.jpg" alt="микрофон" class="circle-img circle2" />
+        <div class="circle-text circle2-text">Здесь будут буковы</div>
+    </div>
+
+    <div class="container" id="appointment-screen">
+        <div class="back-button" id="back-to-main-from-appointment"></div>
+
+        <div class="appointment-layout-grid">
+            <div class="grid-text">ТУТ ТЕКСТ</div>
+            <div class="grid-text">ТУТ ТЕКСТ</div>
+
+            <div class="image-circle"><img src="microphone.jpg" alt="микрофон" /></div>
+            <div class="image-circle"><img src="microphone.jpg" alt="микрофон" /></div>
+
+            <button id="dikidi-book-btn" class="btn btn-yellow grid-button">ЗАПИСАТЬСЯ</button>
+
+            <div class="image-circle"><img src="microphone.jpg" alt="микрофон" /></div>
+            <div class="image-circle"><img src="microphone.jpg" alt="микрофон" /></div>
+
+            <div class="grid-text">ТУТ ТЕКСТ</div>
+            <div class="grid-text">ТУТ ТЕКСТ</div>
+        </div>
+
+        <img src="logo3.png" alt="Логотип" class="footer-logo" />
+    </div>
+
+    <div class="container" id="events-screen">
+        <div class="back-button" id="back-to-main-from-events"></div>
+
+        <div class="events-carousel-wrapper">
+            <div class="events-carousel" id="events-carousel">
+                <div class="event-placeholder">1</div>
+                <div class="event-placeholder">2</div>
+                <div class="event-placeholder">3</div>
+                <div class="event-placeholder">4</div>
+                <div class="event-placeholder">5</div>
+                <div class="event-placeholder">6</div>
+                <div class="event-placeholder">7</div>
+                <div class="event-placeholder">8</div>
+            </div>
+        </div>
+
+        <div class="events-pagination" id="events-pagination"></div>
+        <img src="logo3.png" alt="Логотип" class="footer-logo-static" />
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            /* ---------- Переключение экранов ---------- */
+            const introVideo = document.getElementById('intro-video');
+            const introScreen = document.getElementById('intro-screen');
+            const mainContent = document.getElementById('main-content');
+            const showAppointment = document.getElementById('show-appointment-btn');
+            const showEvents = document.getElementById('show-events-btn');
+            const appointmentScreen = document.getElementById('appointment-screen');
+            const eventsScreen = document.getElementById('events-screen');
+            const backAppt = document.getElementById('back-to-main-from-appointment');
+            const backEvents = document.getElementById('back-to-main-from-events');
+            const eventsCarousel = document.getElementById('events-carousel');
+            const eventsPagination = document.getElementById('events-pagination');
+
+            /* Пагинация */
+            function createDots() {
+                eventsPagination.innerHTML = '';
+                const total = eventsCarousel.children.length;
+                for (let i = 0; i < total; i++) {
+                    const dot = document.createElement('span');
+                    dot.className = 'pagination-dot';
+                    dot.addEventListener('click', () => {
+                        eventsCarousel.scrollTo({ left: eventsCarousel.clientWidth * i, behavior: 'smooth' });
+                    });
+                    eventsPagination.appendChild(dot);
+                }
+                updateDots();
+            }
+            function updateDots() {
+                const dots = eventsPagination.querySelectorAll('.pagination-dot');
+                const active = Math.round(eventsCarousel.scrollLeft / eventsCarousel.clientWidth);
+                dots.forEach((d, i) => d.classList.toggle('active', i === active));
+            }
+            eventsCarousel.addEventListener('scroll', updateDots, { passive: true });
+
+            /* Переходы */
+            introVideo.addEventListener('ended', () => {
+                introScreen.classList.add('hidden');
+                mainContent.classList.add('show');
+            });
+            showAppointment.onclick = () => { mainContent.classList.remove('show'); appointmentScreen.classList.add('show'); };
+            showEvents.onclick = () => { mainContent.classList.remove('show'); eventsScreen.classList.add('show'); createDots(); };
+            backAppt.onclick = () => { appointmentScreen.classList.remove('show'); mainContent.classList.add('show'); };
+            backEvents.onclick = () => { eventsScreen.classList.remove('show'); mainContent.classList.add('show'); };
+
+            /* ---------- DIKIDI: открываем виджет в модалке ---------- */
+            const WIDGET_URL = 'https://dikidi.ru/#widget=190962';  // ID твоего салона
+
+            const btnBook = document.getElementById('dikidi-book-btn');
+            btnBook.addEventListener('click', openDikidiModal);
+
+            function openDikidiModal() {
+                // если уже открыт — не дублируем
+                if (document.querySelector('.dikidi-modal')) return;
+
+                // создаём оболочку
+                const modal = document.createElement('div');
+                modal.className = 'dikidi-modal';
+
+                // крестик
+                const close = document.createElement('span');
+                close.className = 'dikidi-close';
+                close.textContent = '×';
+                // Изменено: для плавного закрытия
+                close.onclick = () => {
+                    modal.classList.remove('show'); // Удаляем класс 'show' для запуска анимации закрытия
+                    // Через 0.25 секунды (равно длительности transition) удаляем модалку
+                    setTimeout(() => {
+                        modal.remove();
+                    }, 250); // 250 миллисекунд = 0.25 секунды
+                };
+
+                // лоадер
+                const loader = document.createElement('div');
+                loader.className = 'dikidi-loader';
+
+                // iframe с виджетом
+                const frame = document.createElement('iframe');
+                frame.src = WIDGET_URL;
+                frame.className = 'dikidi-iframe';
+                frame.allow = 'payment *; fullscreen';
+
+                // Add event listener for when the iframe content loads
+                frame.onload = () => {
+                    loader.remove(); // Remove the loader
+                    frame.classList.add('loaded'); // Show the iframe
+                };
+
+                modal.appendChild(loader); // Add loader first
+                modal.appendChild(frame);
+                modal.appendChild(close);
+                document.body.appendChild(modal);
+
+                // показываем (для плавности)
+                requestAnimationFrame(() => modal.classList.add('show'));
+            }
+
+        });
+    </script>
+
+    <script src="https://dikidi.ru/assets/js/widget_record/widget2.min.js?v=1735141723"></script>
+</body>
+</html>
