@@ -254,10 +254,10 @@ body {
 
 .events-carousel {
   display: flex;
-  flex-direction: row;              /* горизонтально */
-  overflow-x: auto;                 /* горизонтальная прокрутка */
+  flex-direction: row;
+  overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x mandatory;    /* snap по X */
+  scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   height: 60vh;
   width: 100%;
@@ -265,26 +265,78 @@ body {
   scrollbar-width: none;
   -ms-overflow-style: none;
   cursor: grab;
-  gap: 0;
+  gap: 15px; /* Увеличил отступ между элементами */
 }
 
 .events-carousel::-webkit-scrollbar {
   display: none;
 }
 
-.event-placeholder {
-  flex: 0 0 100%;                   /* каждый слайд = ширина вьюпорта карусели */
+/* Изменения для динамически загружаемых событий */
+.event-card {
+  flex: 0 0 calc(100% - 30px); /* Учитываем gap */
   height: 100%;
-  background-color: #d9d9d9;
+  background-color: #333; /* Примерный фон для карточки события */
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   scroll-snap-align: start;
   -webkit-scroll-snap-align: start;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
-  font-size: 24px;
+  padding: 15px;
+  box-sizing: border-box;
+  margin: 0 15px; /* Отступы по бокам */
   color: white;
+  text-align: left; /* Выравнивание текста */
+}
+
+.event-card .event-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* показываем полностью, с отступами */
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  display: block;
+  background-color: black; /* фон вокруг видео */
+}
+
+
+.event-card .event-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    width: 100%; /* Занимает всю ширину */
+}
+
+.event-card .event-date {
+    font-size: 14px;
+    color: #fcb900;
+    margin-bottom: 10px;
+    width: 100%; /* Занимает всю ширину */
+}
+
+.event-card .event-description {
+    font-size: 12px;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    width: 100%; /* Занимает всю ширину */
+}
+
+.no-events, .error-message {
+    font-size: 16px;
+    color: #aaa;
+    text-align: center;
+    width: 100%;
+    position: absolute; /* Чтобы текст был по центру карусели */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .footer-logo-static {
@@ -347,4 +399,17 @@ body {
 .pagination-dot.active {
   background-color: #fcb900;
   width: 35px;
+}
+
+/* В вашем файле CSS или в блоке <style> */
+#events-carousel { /* <-- ВОТ ЗДЕСЬ ИСПРАВЛЕНИЕ: добавьте дефис */
+    overflow-x: auto; /* Обязательно для горизонтальной прокрутки */
+    white-space: nowrap; /* Если у вас элементы располагаются в линию */
+    scroll-behavior: smooth; /* Это ключ к плавной прокрутке */
+    -webkit-overflow-scrolling: touch; /* Для лучшей производительности на iOS */
+}
+
+/* Опционально, для стилизации при перетаскивании */
+#events-carousel.dragging { /* <-- И ЗДЕСЬ ИСПРАВЛЕНИЕ */
+    cursor: grabbing;
 }
