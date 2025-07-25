@@ -12,15 +12,19 @@
         /* затемнение фона */
         .dikidi-modal {
             position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.8);
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 2000;
+            padding: 0;
+            margin: 0;
             opacity: 0;
-            pointer-events: none; /* Не реагирует на события, когда скрыт */
-            transition: opacity .4s ease; /* Плавное появление/исчезновение за 0.25s */
+            pointer-events: none;
+            transition: opacity 0.4s ease;
         }
         .dikidi-modal.show {
             opacity: 1;
@@ -29,16 +33,16 @@
 
         /* сам «поп‑ап»: адаптивный iframe */
         .dikidi-iframe {
-            width: 90vw; /* Keep 90vw for responsiveness */
-            height: 80vh; /* Keep 80vh for responsiveness */
-            max-width: 95%; /* Increased max-width to allow it to be wider */
-            max-height: 95%; /* Increased max-height to allow it to be taller */
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            max-height: 100%;
             border: none;
-            border-radius: 12px;
+            border-radius: 0px;
             background: #fff;
-            /* Hide iframe until loaded */
             opacity: 0;
-            transition: opacity .4s ease; /* Плавное появление iframe после загрузки */
+            transition: opacity 0.4s ease;
+            box-sizing: border-box;
         }
         .dikidi-iframe.loaded {
             opacity: 1;
@@ -264,6 +268,8 @@
             const btnBook = document.getElementById('dikidi-book-btn');
             btnBook.addEventListener('click', openDikidiModal);
 
+
+
             function openDikidiModal() {
                 if (document.querySelector('.dikidi-modal')) return;
 
@@ -285,6 +291,11 @@
                 frame.src = WIDGET_URL;
                 frame.className = 'dikidi-iframe';
                 frame.allow = 'payment *; fullscreen';
+
+                // Устанавливаем реальные размеры в пикселях
+                frame.style.width = `${window.innerWidth}px`;
+                frame.style.height = `${window.innerHeight}px`;
+
                 frame.onload = () => {
                     loader.remove();
                     frame.classList.add('loaded');
