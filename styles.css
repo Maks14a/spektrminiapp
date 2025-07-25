@@ -443,3 +443,13 @@ body {
   -webkit-user-select: none; /* Safari/Chrome specific */
   -ms-user-select: none; /* Internet Explorer/Edge specific */
 }
+
+/* Disable image dragging for event images */
+.events-carousel .event-image {
+  user-select: none; /* Standard property to prevent selection */
+  -webkit-user-drag: none; /* Safari/Chrome specific to prevent image dragging */
+  -khtml-user-drag: none; /* Konqueror specific */
+  -moz-user-select: none; /* Firefox specific */
+  -webkit-user-select: none; /* Safari/Chrome specific */
+  -ms-user-select: none; /* Internet Explorer/Edge specific */
+}
