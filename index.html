@@ -240,6 +240,16 @@
                 });
             }
 
+            // Добавь после playPromise
+            setTimeout(() => {
+                if (!mainContent.classList.contains('show')) {
+                    console.warn("Интро зависло, переходим на главный экран.");
+                    introScreen.classList.add('hidden');
+                    mainContent.classList.add('show');
+                }
+            }, 5000); // 5 секунд
+
+
             introVideo.addEventListener('ended', () => {
                 introScreen.classList.add('hidden');
                 mainContent.classList.add('show');
