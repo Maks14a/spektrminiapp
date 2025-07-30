@@ -135,222 +135,260 @@
         <img src="logo3.png" alt="Логотип" class="footer-logo-static" />
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
 
-            /* ---------- Переключение экранов ---------- */
-            const introVideo = document.getElementById('intro-video');
-            const introScreen = document.getElementById('intro-screen');
-            const mainContent = document.getElementById('main-content');
-            const showAppointment = document.getElementById('show-appointment-btn');
-            const showEvents = document.getElementById('show-events-btn');
-            const appointmentScreen = document.getElementById('appointment-screen');
-            const eventsScreen = document.getElementById('events-screen');
-            const backAppt = document.getElementById('back-to-main-from-appointment');
-            const backEvents = document.getElementById('back-to-main-from-events');
-            const eventsCarousel = document.getElementById('events-carousel'); // Этот элемент
-            const eventsPagination = document.getElementById('events-pagination');
+        /* ---------- DOM Element References ---------- */
+        const introScreen = document.getElementById('intro-screen');
+        const introVideo = document.getElementById('intro-video');
+        const mainContent = document.getElementById('main-content');
+        const appointmentScreen = document.getElementById('appointment-screen');
+        const eventsScreen = document.getElementById('events-screen');
+        const showAppointmentBtn = document.getElementById('show-appointment-btn');
+        const showEventsBtn = document.getElementById('show-events-btn');
+        const backToMainFromAppointmentBtn = document.getElementById('back-to-main-from-appointment');
+        const backToMainFromEventsBtn = document.getElementById('back-to-main-from-events');
+        const eventsCarousel = document.getElementById('events-carousel');
+        const eventsPagination = document.getElementById('events-pagination');
+        const allScreens = [mainContent, appointmentScreen, eventsScreen];
 
-            /* Пагинация */
-            function createDots() {
-                eventsPagination.innerHTML = '';
-                const total = eventsCarousel.children.length;
-                if (total === 0) return;
-                for (let i = 0; i < total; i++) {
-                    const dot = document.createElement('span');
-                    dot.className = 'pagination-dot';
-                    dot.addEventListener('click', () => {
-                        eventsCarousel.scrollTo({ left: eventsCarousel.clientWidth * i, behavior: 'smooth' });
-                    });
-                    eventsPagination.appendChild(dot);
+        /* =================================================================
+           BUG FIX: Centralized function to handle screen transitions
+           This prevents multiple screens from having the 'show' class at
+           the same time, fixing the overlap issue.
+           ================================================================= */
+        function switchScreen(screenToShow) {
+            allScreens.forEach(screen => {
+                // Remove 'show' from all screens except the target one
+                if (screen !== screenToShow) {
+                    screen.classList.remove('show');
                 }
-                updateDots();
-            }
-
-            function updateDots() {
-                const dots = eventsPagination.querySelectorAll('.pagination-dot');
-                if (eventsCarousel.children.length === 0) {
-                    dots.forEach(dot => dot.classList.remove('active'));
-                    return;
-                }
-                // Учитываем возможные остаточные пиксели при прокрутке
-                const scrollWidth = eventsCarousel.scrollWidth - eventsCarousel.clientWidth;
-                if (scrollWidth === 0) { // Если нет прокрутки, все точки неактивны или нет точек
-                    dots.forEach(dot => dot.classList.remove('active'));
-                    return;
-                }
-
-                const activeIndex = Math.round(eventsCarousel.scrollLeft / eventsCarousel.clientWidth);
-                dots.forEach((d, i) => d.classList.toggle('active', i === activeIndex));
-            }
-            eventsCarousel.addEventListener('scroll', updateDots, { passive: true });
-
-            /* Загрузка событий с API */
-            const API_STATIC = "https://api-clear79.amvera.io/static/";
-            const API_FILES = "https://api-clear79.amvera.io/files";
-
-            async function loadEvents() {
-                try {
-                    const filesResponse = await fetch(API_FILES);
-                    if (!filesResponse.ok) throw new Error(`HTTP error! status: ${filesResponse.status}`);
-                    const filesData = await filesResponse.json();
-                    const mediaFiles = filesData.files.filter(filename =>
-                        filename.match(/\.(jpeg|jpg|gif|png|webp|avif|mp4)$/i)
-                    ) || [];
-
-                    eventsCarousel.innerHTML = '';
-
-                    if (mediaFiles.length > 0) {
-                        mediaFiles.forEach(filename => {
-                            const mediaUrl = `${API_STATIC}${filename}`;
-                            const fileExtension = filename.split('.').pop().toLowerCase();
-                            const isVideo = fileExtension === 'mp4';
-
-                            const eventDiv = document.createElement('div');
-                            eventDiv.className = 'event-card';
-
-                            let mediaElementHtml;
-                            if (isVideo) {
-                                mediaElementHtml = `<video src="${mediaUrl}" class="event-image" autoplay loop muted playsinline></video>`;
-                            } else {
-                                mediaElementHtml = `<img src="${mediaUrl}" alt="Event Image" class="event-image">`;
-                            }
-
-                            eventDiv.innerHTML = `${mediaElementHtml}`;
-                            eventsCarousel.appendChild(eventDiv);
-                        });
-                        createDots(); // Создаем точки после загрузки контента
-                    } else {
-                        eventsCarousel.innerHTML = '<p class="no-events">Пока нет предстоящих событий.</p>';
-                    }
-
-                } catch (error) {
-                    console.error('Ошибка загрузки файлов для событий:', error);
-                    eventsCarousel.innerHTML = '<p class="error-message">Не удалось загрузить события. Попробуйте позже.</p>';
-                }
-            }
-
-            /* Переходы */
-            const playPromise = introVideo.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.error("Автовоспроизведение заблокировано:", error);
-                    introScreen.classList.add('hidden');
-                    mainContent.classList.add('show');
-                });
-            }
-
-            // Добавь после playPromise
-            setTimeout(() => {
-                if (!mainContent.classList.contains('show')) {
-                    console.warn("Интро зависло, переходим на главный экран.");
-                    introScreen.classList.add('hidden');
-                    mainContent.classList.add('show');
-                }
-            }, 5000); // 5 секунд
-
-
-            introVideo.addEventListener('ended', () => {
-                introScreen.classList.add('hidden');
-                mainContent.classList.add('show');
             });
+            // Add 'show' to the target screen
+            screenToShow.classList.add('show');
+        }
 
-            showAppointment.onclick = () => {
-                mainContent.classList.remove('show');
-                appointmentScreen.classList.add('show');
-            };
-            showEvents.onclick = () => {
-                mainContent.classList.remove('show');
-                eventsScreen.classList.add('show');
-                loadEvents(); // Загружаем события при переходе на экран
-            };
-            backAppt.onclick = () => {
-                appointmentScreen.classList.remove('show');
-                mainContent.classList.add('show');
-            };
-            backEvents.onclick = () => {
-                eventsScreen.classList.remove('show');
-                mainContent.classList.add('show');
-            };
-
-            /* ---------- DIKIDI: открываем виджет ---------- */
-            const WIDGET_URL = 'https://dikidi.ru/#widget=190962';
-            const btnBook = document.getElementById('dikidi-book-btn');
-            btnBook.addEventListener('click', openDikidiModal);
-
-
-
-            function openDikidiModal() {
-                if (document.querySelector('.dikidi-modal')) return;
-
-                const modal = document.createElement('div');
-                modal.className = 'dikidi-modal';
-
-                const close = document.createElement('span');
-                close.className = 'dikidi-close';
-                close.textContent = '×';
-                close.onclick = () => {
-                    modal.classList.remove('show');
-                    setTimeout(() => modal.remove(), 250);
-                };
-
-                const loader = document.createElement('div');
-                loader.className = 'dikidi-loader';
-
-                const frame = document.createElement('iframe');
-                frame.src = WIDGET_URL;
-                frame.className = 'dikidi-iframe';
-                frame.allow = 'payment *; fullscreen';
-
-                // Устанавливаем реальные размеры в пикселях
-                frame.style.width = `${window.innerWidth}px`;
-                frame.style.height = `${window.innerHeight}px`;
-
-                frame.onload = () => {
-                    loader.remove();
-                    frame.classList.add('loaded');
-                };
-
-                modal.appendChild(loader);
-                modal.appendChild(frame);
-                modal.appendChild(close);
-                document.body.appendChild(modal);
-                requestAnimationFrame(() => modal.classList.add('show'));
-            }
-
-            /* ---------- Логика перетаскивания для карусели ---------- */
-            let isDown = false;
-            let startX;
-            let scrollLeft;
-
-            // События для мыши
-            eventsCarousel.addEventListener('mousedown', (e) => {
-                isDown = true;
-                eventsCarousel.classList.add('dragging');
-                startX = e.pageX - eventsCarousel.offsetLeft; // Позиция мыши относительно элемента
-                scrollLeft = eventsCarousel.scrollLeft;
-            });
-
-            eventsCarousel.addEventListener('mouseleave', () => {
-                isDown = false;
-                eventsCarousel.classList.remove('dragging');
-            });
-
-            eventsCarousel.addEventListener('mouseup', () => {
-                isDown = false;
-                eventsCarousel.classList.remove('dragging');
-            });
-
-            eventsCarousel.addEventListener('mousemove', (e) => {
-                if (!isDown) return;
-                e.preventDefault(); // Предотвращает выделение текста
-                const x = e.pageX - eventsCarousel.offsetLeft;
-                const walk = (x - startX) * 3; // Множитель можно настроить для скорости
-                eventsCarousel.scrollLeft = scrollLeft - walk;
-            });
-
+        /* ---------- Screen Transition Logic ---------- */
+        introVideo.addEventListener('ended', () => {
+            introScreen.classList.add('hidden');
+            switchScreen(mainContent);
         });
-    </script>
+
+        const playPromise = introVideo.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.error("Autoplay was blocked:", error);
+                introScreen.classList.add('hidden');
+                switchScreen(mainContent);
+            });
+        }
+
+        // Fallback timer in case the 'ended' event doesn't fire
+        setTimeout(() => {
+            if (!mainContent.classList.contains('show')) {
+                console.warn("Intro seems stuck, forcing main screen.");
+                introScreen.classList.add('hidden');
+                switchScreen(mainContent);
+            }
+        }, 5000); // 5 seconds
+
+        showAppointmentBtn.onclick = () => switchScreen(appointmentScreen);
+
+        showEventsBtn.onclick = () => {
+            switchScreen(eventsScreen);
+            loadEvents(); // Load events when switching to the screen
+        };
+
+        backToMainFromAppointmentBtn.onclick = () => switchScreen(mainContent);
+        backToMainFromEventsBtn.onclick = () => switchScreen(mainContent);
+
+        /* =================================================================
+           PAGINATION FIX: Improved correlation between dots and slides
+           ================================================================= */
+
+        // Helper to calculate the width of a single carousel item including its gap
+        function getSlideStep() {
+            if (eventsCarousel.children.length > 1) {
+                const firstItem = eventsCarousel.children[0];
+                const secondItem = eventsCarousel.children[1];
+                return secondItem.offsetLeft - firstItem.offsetLeft;
+            }
+            return eventsCarousel.clientWidth; // Fallback for single item
+        }
+
+        function createDots() {
+            eventsPagination.innerHTML = '';
+            const total = eventsCarousel.children.length;
+            if (total === 0) return;
+
+            const slideStep = getSlideStep(); // Get the width of one step
+
+            for (let i = 0; i < total; i++) {
+                const dot = document.createElement('span');
+                dot.className = 'pagination-dot';
+                dot.addEventListener('click', () => {
+                    // Scroll to the calculated position of the target slide
+                    eventsCarousel.scrollTo({ left: slideStep * i, behavior: 'smooth' });
+                });
+                eventsPagination.appendChild(dot);
+            }
+            updateDots();
+        }
+
+        function updateDots() {
+            const dots = eventsPagination.querySelectorAll('.pagination-dot');
+            if (eventsCarousel.children.length === 0) {
+                dots.forEach(dot => dot.classList.remove('active'));
+                return;
+            }
+
+            const slideStep = getSlideStep();
+            if(slideStep === 0) return;
+
+            // Calculate active index based on the actual slide width
+            const activeIndex = Math.round(eventsCarousel.scrollLeft / slideStep);
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === activeIndex);
+            });
+        }
+        eventsCarousel.addEventListener('scroll', updateDots, { passive: true });
+
+
+        /* ---------- Events Loading Logic ---------- */
+        const API_STATIC = "https://api-clear79.amvera.io/static/";
+        const API_FILES = "https://api-clear79.amvera.io/files";
+
+        async function loadEvents() {
+            try {
+                const filesResponse = await fetch(API_FILES);
+                if (!filesResponse.ok) throw new Error(`HTTP error! status: ${filesResponse.status}`);
+                const filesData = await filesResponse.json();
+                const mediaFiles = filesData.files.filter(filename =>
+                    filename.match(/\.(jpeg|jpg|gif|png|webp|avif|mp4)$/i)
+                ) || [];
+
+                eventsCarousel.innerHTML = '';
+
+                if (mediaFiles.length > 0) {
+                    mediaFiles.forEach(filename => {
+                        const mediaUrl = `${API_STATIC}${filename}`;
+                        const fileExtension = filename.split('.').pop().toLowerCase();
+                        const isVideo = fileExtension === 'mp4';
+
+                        const eventDiv = document.createElement('div');
+                        eventDiv.className = 'event-card';
+
+                        let mediaElementHtml;
+                        if (isVideo) {
+                            mediaElementHtml = `<video src="${mediaUrl}" class="event-image" autoplay loop muted playsinline></video>`;
+                        } else {
+                            mediaElementHtml = `<img src="${mediaUrl}" alt="Event Image" class="event-image">`;
+                        }
+
+                        eventDiv.innerHTML = `${mediaElementHtml}`;
+                        eventsCarousel.appendChild(eventDiv);
+                    });
+                    createDots(); // Create dots after content is loaded
+                } else {
+                    eventsCarousel.innerHTML = '<p class="no-events">Пока нет предстоящих событий.</p>';
+                    eventsPagination.innerHTML = ''; // Clear dots if no events
+                }
+
+            } catch (error) {
+                console.error('Error loading event files:', error);
+                eventsCarousel.innerHTML = '<p class="error-message">Не удалось загрузить события. Попробуйте позже.</p>';
+            }
+        }
+
+        /* ---------- DIKIDI Widget Logic ---------- */
+        const WIDGET_URL = 'https://dikidi.ru/#widget=190962';
+        const btnBook = document.getElementById('dikidi-book-btn');
+        btnBook.addEventListener('click', openDikidiModal);
+
+        function openDikidiModal() {
+            if (document.querySelector('.dikidi-modal')) return;
+
+            const modal = document.createElement('div');
+            modal.className = 'dikidi-modal';
+
+            const close = document.createElement('span');
+            close.className = 'dikidi-close';
+            close.textContent = '×';
+            close.onclick = () => {
+                modal.classList.remove('show');
+                setTimeout(() => modal.remove(), 250);
+            };
+
+            const loader = document.createElement('div');
+            loader.className = 'dikidi-loader';
+
+            const frame = document.createElement('iframe');
+            frame.src = WIDGET_URL;
+            frame.className = 'dikidi-iframe';
+            frame.allow = 'payment *; fullscreen';
+
+            frame.style.width = `${window.innerWidth}px`;
+            frame.style.height = `${window.innerHeight}px`;
+
+            frame.onload = () => {
+                loader.remove();
+                frame.classList.add('loaded');
+            };
+
+            modal.appendChild(loader);
+            modal.appendChild(frame);
+            modal.appendChild(close);
+            document.body.appendChild(modal);
+            requestAnimationFrame(() => modal.classList.add('show'));
+        }
+
+        /* ---------- Carousel Dragging Logic ---------- */
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        function startDragging(e) {
+            isDown = true;
+            eventsCarousel.classList.add('dragging');
+            startX = (e.pageX || e.touches[0].pageX) - eventsCarousel.offsetLeft;
+            scrollLeft = eventsCarousel.scrollLeft;
+        }
+
+        function stopDragging() {
+            isDown = false;
+            eventsCarousel.classList.remove('dragging');
+        }
+
+        function drag(e) {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = (e.pageX || e.touches[0].pageX) - eventsCarousel.offsetLeft;
+            const walk = (x - startX) * 2;
+            eventsCarousel.scrollLeft = scrollLeft - walk;
+        }
+
+        // Mouse events
+        eventsCarousel.addEventListener('mousedown', startDragging);
+        eventsCarousel.addEventListener('mouseleave', stopDragging);
+        eventsCarousel.addEventListener('mouseup', stopDragging);
+        eventsCarousel.addEventListener('mousemove', drag);
+
+        // Touch events
+        eventsCarousel.addEventListener('touchstart', startDragging);
+        eventsCarousel.addEventListener('touchend', stopDragging);
+        eventsCarousel.addEventListener('touchcancel', stopDragging);
+        eventsCarousel.addEventListener('touchmove', drag);
+
+        // --- Mouse Wheel Scrolling ---
+        eventsCarousel.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0) { // Prevent page scroll only for vertical wheel
+                e.preventDefault();
+                eventsCarousel.scrollLeft += e.deltaY;
+            }
+        });
+    });
+</script>
+
 
 
     <script src="https://dikidi.ru/assets/js/widget_record/widget2.min.js?v=1735141723"></script>
