@@ -105,19 +105,13 @@
         <div class="back-button" id="back-to-main-from-appointment"></div>
 
         <div class="appointment-layout-grid">
-            <div class="grid-text">ТУТ ТЕКСТ</div>
-            <div class="grid-text">ТУТ ТЕКСТ</div>
-
-            <div class="image-circle"><img src="microphone.jpg" alt="микрофон" /></div>
-            <div class="image-circle"><img src="microphone.jpg" alt="микрофон" /></div>
+            <div class="image-circle"><img src="1.jpg" alt="микрофон" /></div>
+            <div class="image-circle"><img src="2.jpg" alt="микрофон" /></div>
 
             <button id="dikidi-book-btn" class="btn btn-yellow grid-button">ЗАПИСАТЬСЯ</button>
 
-            <div class="image-circle"><img src="microphone.jpg" alt="микрофон" /></div>
-            <div class="image-circle"><img src="microphone.jpg" alt="микрофон" /></div>
-
-            <div class="grid-text">ТУТ ТЕКСТ</div>
-            <div class="grid-text">ТУТ ТЕКСТ</div>
+            <div class="image-circle"><img src="3.jpg" alt="микрофон" /></div>
+            <div class="image-circle"><img src="4.jpg" alt="микрофон" /></div>
         </div>
 
         <img src="logo3.png" alt="Логотип" class="footer-logo" />
@@ -152,6 +146,9 @@
         const eventsPagination = document.getElementById('events-pagination');
         const allScreens = [mainContent, appointmentScreen, eventsScreen];
 
+        let autoScrollInterval; // Переменная для хранения ID интервала автоматической прокрутки
+        let numOriginalItems = 0; // Количество оригинальных элементов в карусели
+
         /* =================================================================
            BUG FIX: Centralized function to handle screen transitions
            This prevents multiple screens from having the 'show' class at
@@ -166,6 +163,15 @@
             });
             // Add 'show' to the target screen
             screenToShow.classList.add('show');
+
+            // Управление интервалом автоматической прокрутки
+            if (screenToShow === eventsScreen) {
+                // Если переходим на экран событий, запускаем автоматическую прокрутку
+                startAutoScroll();
+            } else {
+                // Если переходим на другой экран, останавливаем автоматическую прокрутку
+                stopAutoScroll();
+            }
         }
 
         /* ---------- Screen Transition Logic ---------- */
@@ -208,27 +214,33 @@
 
         // Helper to calculate the width of a single carousel item including its gap
         function getSlideStep() {
-            if (eventsCarousel.children.length > 1) {
-                const firstItem = eventsCarousel.children[0];
-                const secondItem = eventsCarousel.children[1];
-                return secondItem.offsetLeft - firstItem.offsetLeft;
-            }
-            return eventsCarousel.clientWidth; // Fallback for single item
+            // Убедимся, что есть хотя бы один элемент для измерения
+            if (eventsCarousel.children.length === 0) return 0;
+
+            const firstItem = eventsCarousel.children[0];
+            // Используем clientWidth для ширины элемента, и получаем margin-right из стилей
+            const itemWidth = firstItem.clientWidth;
+            const style = window.getComputedStyle(firstItem);
+            const marginRight = parseFloat(style.marginRight);
+
+            return itemWidth + marginRight;
         }
 
         function createDots() {
             eventsPagination.innerHTML = '';
-            const total = eventsCarousel.children.length;
-            if (total === 0) return;
+            // Точки создаются только для оригинальных элементов
+            if (numOriginalItems === 0) return;
 
-            const slideStep = getSlideStep(); // Get the width of one step
+            const slideStep = getSlideStep();
+            if (slideStep === 0) return;
 
-            for (let i = 0; i < total; i++) {
+            for (let i = 0; i < numOriginalItems; i++) {
                 const dot = document.createElement('span');
                 dot.className = 'pagination-dot';
                 dot.addEventListener('click', () => {
-                    // Scroll to the calculated position of the target slide
-                    eventsCarousel.scrollTo({ left: slideStep * i, behavior: 'smooth' });
+                    // Прокрутка к соответствующему оригинальному элементу
+                    // Учитываем смещение из-за клонированных элементов
+                    eventsCarousel.scrollTo({ left: (i + numOriginalItems) * slideStep, behavior: 'smooth' });
                 });
                 eventsPagination.appendChild(dot);
             }
@@ -237,7 +249,7 @@
 
         function updateDots() {
             const dots = eventsPagination.querySelectorAll('.pagination-dot');
-            if (eventsCarousel.children.length === 0) {
+            if (eventsCarousel.children.length === 0 || numOriginalItems === 0) {
                 dots.forEach(dot => dot.classList.remove('active'));
                 return;
             }
@@ -245,13 +257,28 @@
             const slideStep = getSlideStep();
             if(slideStep === 0) return;
 
-            // Calculate active index based on the actual slide width
-            const activeIndex = Math.round(eventsCarousel.scrollLeft / slideStep);
+            // Смещаем scrollLeft, чтобы он соответствовал "реальным" элементам
+            const adjustedScrollLeft = eventsCarousel.scrollLeft - (numOriginalItems * slideStep);
+
+            // Вычисляем активный индекс, округляя до ближайшего целого
+            let activeIndex = Math.round(adjustedScrollLeft / slideStep);
+
+            // Убедимся, что activeIndex находится в пределах оригинальных элементов
+            if (activeIndex < 0) {
+                activeIndex = (numOriginalItems + (activeIndex % numOriginalItems)) % numOriginalItems;
+            } else if (activeIndex >= numOriginalItems) {
+                activeIndex = activeIndex % numOriginalItems;
+            }
+
             dots.forEach((dot, index) => {
                 dot.classList.toggle('active', index === activeIndex);
             });
         }
-        eventsCarousel.addEventListener('scroll', updateDots, { passive: true });
+        // Слушатель событий для обновления точек пагинации и бесконечной прокрутки
+        eventsCarousel.addEventListener('scroll', () => {
+            updateDots();
+            handleInfiniteScroll(); // Вызываем функцию бесконечной прокрутки
+        }, { passive: true });
 
 
         /* ---------- Events Loading Logic ---------- */
@@ -263,14 +290,25 @@
                 const filesResponse = await fetch(API_FILES);
                 if (!filesResponse.ok) throw new Error(`HTTP error! status: ${filesResponse.status}`);
                 const filesData = await filesResponse.json();
-                const mediaFiles = filesData.files.filter(filename =>
+                const originalMediaFiles = filesData.files.filter(filename =>
                     filename.match(/\.(jpeg|jpg|gif|png|webp|avif|mp4)$/i)
                 ) || [];
 
-                eventsCarousel.innerHTML = '';
+                eventsCarousel.innerHTML = ''; // Очищаем карусель перед загрузкой
 
-                if (mediaFiles.length > 0) {
-                    mediaFiles.forEach(filename => {
+                if (originalMediaFiles.length > 0) {
+                    numOriginalItems = originalMediaFiles.length; // Сохраняем количество оригинальных элементов
+
+                    // Клонируем элементы для создания эффекта бесконечной прокрутки
+                    // Клонируем последние элементы для начала
+                    const clonedBefore = originalMediaFiles.slice(-numOriginalItems);
+                    // Клонируем первые элементы для конца
+                    const clonedAfter = originalMediaFiles.slice(0, numOriginalItems);
+
+                    // Объединяем: [клонированные_последние, оригинальные, клонированные_первые]
+                    const combinedMedia = [...clonedBefore, ...originalMediaFiles, ...clonedAfter];
+
+                    combinedMedia.forEach(filename => {
                         const mediaUrl = `${API_STATIC}${filename}`;
                         const fileExtension = filename.split('.').pop().toLowerCase();
                         const isVideo = fileExtension === 'mp4';
@@ -288,17 +326,92 @@
                         eventDiv.innerHTML = `${mediaElementHtml}`;
                         eventsCarousel.appendChild(eventDiv);
                     });
-                    createDots(); // Create dots after content is loaded
+
+                    // Теперь, когда все элементы добавлены, можно получить точный slideStep
+                    const slideStep = getSlideStep();
+                    if (slideStep > 0) {
+                        // Устанавливаем начальную позицию прокрутки на начало "реального" контента
+                        eventsCarousel.scrollLeft = numOriginalItems * slideStep;
+                    }
+
+                    createDots(); // Создаем точки пагинации для оригинальных элементов
+
                 } else {
                     eventsCarousel.innerHTML = '<p class="no-events">Пока нет предстоящих событий.</p>';
-                    eventsPagination.innerHTML = ''; // Clear dots if no events
+                    eventsPagination.innerHTML = ''; // Очищаем точки, если нет событий
+                    numOriginalItems = 0; // Сбрасываем количество оригинальных элементов
                 }
 
             } catch (error) {
                 console.error('Error loading event files:', error);
                 eventsCarousel.innerHTML = '<p class="error-message">Не удалось загрузить события. Попробуйте позже.</p>';
+                eventsPagination.innerHTML = '';
+                numOriginalItems = 0;
             }
         }
+
+        /* =================================================================
+           NEW FEATURE: Automatic Carousel Scrolling and Looping
+           ================================================================= */
+        function startAutoScroll() {
+            // Очищаем существующий интервал, чтобы не запускать несколько
+            stopAutoScroll();
+
+            autoScrollInterval = setInterval(() => {
+                if (numOriginalItems === 0) return;
+                const slideStep = getSlideStep();
+                if (slideStep === 0) return;
+
+                // Просто прокручиваем на один шаг; handleInfiniteScroll будет управлять зацикливанием
+                eventsCarousel.scrollBy({ left: slideStep, behavior: 'smooth' });
+            }, 7000); // 7 секунд
+        }
+
+        function stopAutoScroll() {
+            if (autoScrollInterval) {
+                clearInterval(autoScrollInterval);
+                autoScrollInterval = null;
+            }
+        }
+
+        /* =================================================================
+           NEW FEATURE: Infinite Carousel Scrolling Logic
+           ================================================================= */
+        function handleInfiniteScroll() {
+            if (numOriginalItems === 0) return;
+
+            const slideStep = getSlideStep();
+            if (slideStep === 0) return;
+
+            const currentScrollLeft = eventsCarousel.scrollLeft;
+
+            // Позиция начала "реального" контента (после клонированных элементов в начале)
+            const startOfRealContent = numOriginalItems * slideStep;
+            // Позиция конца "реального" контента (конец оригинальных элементов)
+            const endOfRealContent = (numOriginalItems * 2) * slideStep; // (клонированные_до + оригинальные)
+
+            // Если прокрутили до клонированных элементов в конце (справа)
+            if (currentScrollLeft >= endOfRealContent) {
+                eventsCarousel.style.scrollBehavior = 'auto'; // Временно отключаем плавную прокрутку
+                // Мгновенно перепрыгиваем к началу "реального" контента
+                eventsCarousel.scrollLeft = startOfRealContent + (currentScrollLeft - endOfRealContent);
+                // Включаем плавную прокрутку обратно после короткой задержки для рендеринга
+                requestAnimationFrame(() => {
+                    eventsCarousel.style.scrollBehavior = 'smooth';
+                });
+            }
+            // Если прокрутили до клонированных элементов в начале (слева)
+            else if (currentScrollLeft < startOfRealContent) {
+                eventsCarousel.style.scrollBehavior = 'auto'; // Временно отключаем плавную прокрутку
+                // Мгновенно перепрыгиваем к концу "реального" контента
+                eventsCarousel.scrollLeft = endOfRealContent - (startOfRealContent - currentScrollLeft);
+                // Включаем плавную прокрутку обратно после короткой задержки
+                requestAnimationFrame(() => {
+                    eventsCarousel.style.scrollBehavior = 'smooth';
+                });
+            }
+        }
+
 
         /* ---------- DIKIDI Widget Logic ---------- */
         const WIDGET_URL = 'https://dikidi.ru/#widget=190962';
@@ -346,17 +459,23 @@
         let isDown = false;
         let startX;
         let scrollLeft;
+        let wheelTimeout; // Переменная для таймаута колеса мыши
 
         function startDragging(e) {
             isDown = true;
             eventsCarousel.classList.add('dragging');
             startX = (e.pageX || e.touches[0].pageX) - eventsCarousel.offsetLeft;
             scrollLeft = eventsCarousel.scrollLeft;
+            stopAutoScroll(); // Останавливаем автопрокрутку при ручном взаимодействии
         }
 
         function stopDragging() {
             isDown = false;
             eventsCarousel.classList.remove('dragging');
+            // При отпускании мыши/пальца, перезапускаем автопрокрутку, если мы на экране событий
+            if (eventsScreen.classList.contains('show')) {
+                startAutoScroll();
+            }
         }
 
         function drag(e) {
@@ -384,8 +503,19 @@
             if (e.deltaY !== 0) { // Prevent page scroll only for vertical wheel
                 e.preventDefault();
                 eventsCarousel.scrollLeft += e.deltaY;
+                stopAutoScroll(); // Останавливаем автопрокрутку при ручной прокрутке
+                // Можно добавить таймаут для перезапуска автопрокрутки после короткой паузы
+                clearTimeout(wheelTimeout); // Используем wheelTimeout
+                wheelTimeout = setTimeout(() => {
+                    if (eventsScreen.classList.contains('show')) {
+                        startAutoScroll();
+                    }
+                }, 1000); // Перезапустить через 1 секунду после последнего вращения колеса
             }
         });
+
+        // Устанавливаем scroll-behavior: smooth по умолчанию для плавной прокрутки
+        eventsCarousel.style.scrollBehavior = 'smooth';
     });
 </script>
 

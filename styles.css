@@ -49,7 +49,7 @@ body {
 
 .logo {
   width: 490px;
-  margin-top: -150px;
+  margin-top: -190px; /* MODIFIED: Moved logo up by increasing negative margin */
   margin-bottom: 0px;
 }
 
@@ -66,11 +66,11 @@ body {
 .btn {
   font-size: 14px;
   /* MODIFIED: Reduced padding and width for smaller buttons */
-  padding: 12px 30px;
+  padding: 10px 25px; /* MODIFIED: Reduced vertical and horizontal padding */
   border-radius: 30px;
   cursor: pointer;
   transition: all 0.2s ease;
-  width: 180px; /* MODIFIED */
+  width: 160px; /* MODIFIED: Reduced width */
   letter-spacing: 0.3px;
   font-family: 'UNCAGE-VF', Arial, sans-serif;
 }
@@ -110,7 +110,7 @@ body {
   width: 160px;
   height: 160px;
   /* MODIFIED: Increased 'top' value to move the circle down */
-  top: 60%;
+  top: 65%; /* MODIFIED: Moved circle down further */
   left: 20px;
   transform: translateY(-50%);
 }
@@ -118,7 +118,7 @@ body {
 .circle2 {
   width: 160px;
   height: 160px;
-  bottom: 8%;
+  bottom: 5%; /* MODIFIED: Moved circle down */
   right: 20px;
 }
 
@@ -134,14 +134,14 @@ body {
 
 .circle1-text {
   /* MODIFIED: Adjusted to match the new position of circle1 */
-  top: 60%;
+  top: 65%; /* MODIFIED: Moved text down further */
   left: 200px;
   transform: translateY(-50%);
   text-align: left;
 }
 
 .circle2-text {
-  bottom: 15%;
+  bottom: 12%; /* MODIFIED: Moved text down */
   right: 200px;
   text-align: right;
 }
@@ -190,8 +190,8 @@ body {
 }
 
 .image-circle {
-  width: 140px;
-  height: 140px;
+  width: 150px;
+  height: 150px;
   background-color: #d9d9d9;
   border-radius: 50%;
   overflow: hidden;
@@ -203,7 +203,11 @@ body {
 .image-circle img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* Возвращено на 'cover', чтобы заполнять весь круг */
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  display: block;
 }
 
 .grid-text {
@@ -224,8 +228,8 @@ body {
   color: #1f1f1f;
   border: none;
   font-weight: bold;
-  /* MODIFIED: Increased vertical padding, removed fixed width */
-  padding: 15px 50px;
+  /* MODIFIED: Increased vertical padding, reduced horizontal padding for shorter length */
+  padding: 10px 28px; /* MODIFIED: Reduced horizontal padding */
   font-size: 14px;
   margin-top: 20px;
   box-sizing: border-box;
