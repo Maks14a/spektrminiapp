@@ -513,8 +513,8 @@ body {
 }
 
 /* чуть опустим кружки, чтобы не перекрывали контент */
-.circle1{ top:58%; }
-.circle1-text{ top:58%; }
+.circle1{ top:62%; }
+.circle1-text{ top:62%; }
 
 /* --- Галерея в модалке: мобильный фуллскрин --- */
 .overlay-content.gallery-open{
@@ -652,4 +652,5 @@ body {
   border: none;
   cursor: pointer;
 }
+
 
