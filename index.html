@@ -212,6 +212,28 @@
             }
         }
 
+        /* =================================================================
+           ИЗМЕНЕНО: Новая функция для завершения интро.
+           Она скрывает интро и решает, какой экран показать,
+           не конфликтуя с выбором пользователя.
+           ================================================================= */
+        function finishIntro() {
+            // Если интро уже скрыто, ничего не делаем.
+            if (introScreen.classList.contains('hidden')) {
+                return;
+            }
+
+            introScreen.classList.add('hidden');
+
+            // Проверяем, был ли уже показан какой-либо экран пользователем.
+            const aScreenIsAlreadyShown = allScreens.some(screen => screen.classList.contains('show'));
+
+            // Если ни один экран еще не активен, показываем главный.
+            if (!aScreenIsAlreadyShown) {
+                switchScreen(mainContent);
+            }
+        }
+
         /* ---------- Screen Transition Logic ---------- */
         introVideo.addEventListener('ended', () => {
             introScreen.classList.add('hidden');
@@ -774,3 +796,4 @@
     <script src="https://dikidi.ru/assets/js/widget_record/widget2.min.js?v=1735141723"></script>
 </body>
 </html>
+
