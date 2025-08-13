@@ -533,10 +533,12 @@
         }
         function closeOverlay(){
         overlayModal.classList.remove('show');
-        overlayContent.classList.remove('gallery-open'); // <= сброс режима галереи
+        overlayContent.classList.remove('gallery-open'); // если ранее был фуллскрин
+        overlayContent.classList.remove('gallery-fit');  // <-- добавь это
         overlayContent.innerHTML = '';
         document.body.style.overflow = '';
         }
+
 
         // Закрытие
         overlayClose.addEventListener('click', closeOverlay);
@@ -548,6 +550,7 @@
         if (aboutCircle) {
         aboutCircle.addEventListener('click', () => {
             overlayContent.classList.remove('gallery-open'); // <= важно
+            overlayContent.classList.remove('gallery-fit');
             openOverlay(`
             <div class="about-content">
                 <h2 style="margin:0 0 10px 0;">О нас</h2>
@@ -568,6 +571,7 @@
         if (teachersCircle) {
         teachersCircle.addEventListener('click', () => {
         overlayContent.classList.add('gallery-open'); // <= включили режим
+        overlayContent.classList.add('gallery-fit');
         openOverlay(`
             <div class="gallery">
                 <div class="gallery-track" id="gallery-track">
@@ -584,8 +588,12 @@
         const track = document.getElementById('gallery-track');
         const dots  = document.querySelectorAll('#gallery-dots .gallery-dot');
 
-        function stepWidth(){            // ровно ширина видимой области
-            return track.clientWidth;
+        function stepWidth(){
+            const first = track.querySelector('.slide');
+            if (!first) return track.clientWidth;
+            const styles = getComputedStyle(track);
+            const gap = parseFloat(styles.columnGap || styles.gap) || 8;
+            return first.clientWidth + gap;
         }
         function updateDots(){
         const idx = Math.round(track.scrollLeft / stepWidth());
