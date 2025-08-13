@@ -44,7 +44,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0;
+            padding: 20px;
             margin: 0;
             opacity: 0;
             pointer-events: none;
@@ -59,13 +59,14 @@
         .dikidi-iframe {
             width: 100vw;
             height: 100vh;
-            max-width: 100%;
-            max-height: 100%;
+            max-width: 600px;
+            max-height: 90vh;
             border: none;
-            border-radius: 0px;
+            border-radius: 16px;
             background: #fff;
             opacity: 0;
             transition: opacity 0.4s ease;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.4);
             box-sizing: border-box;
         }
         .dikidi-iframe.loaded {
