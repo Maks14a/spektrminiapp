@@ -48,8 +48,8 @@ body {
 /* ===== ГЛАВНАЯ ===== */
 
 .logo {
-  width: 490px;
-  margin-top: -190px; /* MODIFIED: Moved logo up by increasing negative margin */
+  width: 400px;
+  margin-top: -140px; /* MODIFIED: Moved logo up by increasing negative margin */
   margin-bottom: 0px;
 }
 
@@ -60,17 +60,17 @@ body {
   align-items: center;
   z-index: 2;
   position: relative;
-  margin-top: -150px;
+  margin-top: -120px;
 }
 
 .btn {
-  font-size: 10x;
+  font-size: 14px;
   /* MODIFIED: Reduced padding and width for smaller buttons */
-  padding: 20px 5px; /* MODIFIED: Reduced vertical and horizontal padding */
+  padding: 20px 10px; /* MODIFIED: Reduced vertical and horizontal padding */
   border-radius: 30px;
   cursor: pointer;
   transition: all 0.2s ease;
-  width: 140px; /* MODIFIED: Reduced width */
+  width: 180px; /* MODIFIED: Reduced width */
   letter-spacing: 0.3px;
   font-family: 'UNCAGE-VF', Arial, sans-serif;
 }
@@ -231,9 +231,9 @@ body {
   border: none;
   font-weight: 300;
   /* MODIFIED: Increased vertical padding, reduced horizontal padding for shorter length */
-  padding: 20px 20px; /* MODIFIED: Reduced horizontal padding */
-  font-size: 10px;
-  width: 140px;
+  padding: 20px 10px; /* MODIFIED: Reduced horizontal padding */
+  font-size: 14px;
+  width: 180px;
   margin-top: 20px;
   box-sizing: border-box;
 }
@@ -370,19 +370,19 @@ body {
   position: absolute;
   top: 20px;
   left: 20px;
-  width: auto;
+  width: auto; /* убрали фиксированный размер */
   height: auto;
-  background: none !important; /* убираем фон везде */
-  border: none !important; /* убираем рамки */
-  border-radius: 0 !important;
+  background: none; /* убрали фон */
+  border: none; /* убрали рамку */
+  border-radius: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   z-index: 100;
-  box-shadow: none !important; /* убираем тень */
+  box-shadow: none; /* убрали тень */
   transition: transform 0.2s ease;
-  padding: 0;
+  padding: 0; /* убрали внутренние отступы */
 }
 
 .back-button:hover {
@@ -390,9 +390,9 @@ body {
 }
 
 .back-button::before {
-  content: '✖';
+  content: '✖'; /* крестик */
   font-size: 28px;
-  color: #fcb900; /* жёлтый крестик */
+  color: #fcb900; /* жёлтый цвет, как на кнопках */
   line-height: 1;
   font-weight: 100;
 }
@@ -462,4 +462,3 @@ body {
   -webkit-user-select: none;
   -ms-user-select: none;
 }
-
