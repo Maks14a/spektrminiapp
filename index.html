@@ -9,6 +9,30 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Стили для галереи преподавателей */
+        .gallery-track {
+            gap: 15px;
+            scroll-behavior: smooth;
+            padding: 0 15px;
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .gallery-item {
+            flex: 0 0 100%;
+            max-height: 80vh;
+            width: 100%;
+            object-fit: contain;
+            border-radius: 32px;
+            scroll-snap-align: start;
+        }
+
+        .gallery.dragging {
+            cursor: grabbing;
+        }
+
         /* затемнение фона */
         .dikidi-modal {
             position: fixed;
@@ -298,6 +322,8 @@
         /* ---------- Events Loading Logic ---------- */
         const API_STATIC = "https://apispectrminiapp-vozmak.amvera.io/static/";
         const API_FILES = "https://apispectrminiapp-vozmak.amvera.io/files";
+        const API_TEACHERS_STATIC = "https://apispectrminiapp-vozmak.amvera.io/static/Teachers/";
+        const API_TEACHERS_FILES = "https://apispectrminiapp-vozmak.amvera.io/teachers/files";
 
         async function loadEvents() {
             try {
@@ -584,43 +610,160 @@
         teachersCircle.addEventListener('click', () => {
         overlayContent.classList.add('gallery-open'); // <= включили режим
         overlayContent.classList.add('gallery-fit');
-        openOverlay(`
-            <div class="gallery">
-                <div class="gallery-track" id="gallery-track">
-                <img src="pavel.jpg" class="gallery-item" alt="Павел Бернацкий">
-                <img src="arseniy.jpg" class="gallery-item" alt="Арсений Бронский">
-                </div>
-                <div class="gallery-dots" id="gallery-dots">
-                <span class="gallery-dot active"></span>
-                <span class="gallery-dot"></span>
-                </div>
-            </div>
-            `);
+        // Загружаем данные о преподавателях
+        fetch(API_TEACHERS_FILES)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                const teacherFiles = data.files.filter(filename =>
+                    filename.match(/\.(jpeg|jpg|gif|png|webp|avif)$/i)
+                ) || [];
 
-        const track = document.getElementById('gallery-track');
-        const dots  = document.querySelectorAll('#gallery-dots .gallery-dot');
+                if (teacherFiles.length > 0) {
+                    // Создаем HTML для галереи
+                    const galleryHTML = `
+                        <div class="gallery">
+                            <div class="gallery-track" id="gallery-track">
+                                ${teacherFiles.map(filename => `
+                                    <img src="${API_TEACHERS_STATIC}${filename}"
+                                         class="gallery-item"
+                                         alt="Преподаватель">`
+                                ).join('')}
+                            </div>
+                            <div class="gallery-dots" id="gallery-dots">
+                                ${teacherFiles.map((_, index) => `
+                                    <span class="gallery-dot ${index === 0 ? 'active' : ''}"></span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                    openOverlay(galleryHTML);
 
-        function stepWidth(){
-            const first = track.querySelector('.slide');
-            if (!first) return track.clientWidth;
-            const styles = getComputedStyle(track);
-            const gap = parseFloat(styles.columnGap || styles.gap) || 8;
-            return first.clientWidth + gap;
-        }
-        function updateDots(){
-        const idx = Math.round(track.scrollLeft / stepWidth());
-        dots.forEach((d,i)=>d.classList.toggle('active', i === idx));
-        }
+                    // Инициализация галереи после её создания
+                    requestAnimationFrame(() => {
+                        const track = document.getElementById('gallery-track');
+                        const dots = document.querySelectorAll('#gallery-dots .gallery-dot');
+                        let isDown = false;
+                        let startX;
+                        let scrollLeft;
+                        let autoScrollInterval;                        function stepWidth() {
+                            const firstItem = track.querySelector('.gallery-item');
+                            if (!firstItem) return track.clientWidth;
+                            const styles = getComputedStyle(firstItem);
+                            const width = firstItem.clientWidth;
+                            const marginRight = parseFloat(styles.marginRight) || 0;
+                            return width + marginRight;
+                        }
 
-        requestAnimationFrame(updateDots);
-        window.addEventListener('resize', updateDots);
-        track.addEventListener('scroll', updateDots, { passive:true });
+                        function updateDots() {
+                            const step = stepWidth();
+                            if (step === 0) return;
+                            const idx = Math.round(track.scrollLeft / step);
+                            dots.forEach((dot, i) => {
+                                dot.classList.toggle('active', i === idx);
+                            });
+                        }
 
-        dots.forEach((dot, i) => {
-            dot.addEventListener('click', () => {
-                track.scrollTo({ left: i * stepWidth(), behavior: 'smooth' });
+                        // Функции для автопрокрутки
+                        function startAutoScroll() {
+                            stopAutoScroll();
+                            autoScrollInterval = setInterval(() => {
+                                const step = stepWidth();
+                                if (track.scrollLeft >= (track.scrollWidth - track.clientWidth)) {
+                                    track.scrollTo({ left: 0, behavior: 'smooth' });
+                                } else {
+                                    track.scrollBy({ left: step, behavior: 'smooth' });
+                                }
+                            }, 7000);
+                        }
+
+                        function stopAutoScroll() {
+                            if (autoScrollInterval) {
+                                clearInterval(autoScrollInterval);
+                                autoScrollInterval = null;
+                            }
+                        }
+
+                        // Функции для перетаскивания
+                        function startDragging(e) {
+                            isDown = true;
+                            track.classList.add('dragging');
+                            startX = (e.pageX || e.touches[0].pageX) - track.offsetLeft;
+                            scrollLeft = track.scrollLeft;
+                            stopAutoScroll();
+                        }
+
+                        function stopDragging() {
+                            isDown = false;
+                            track.classList.remove('dragging');
+                            startAutoScroll();
+                        }
+
+                        function drag(e) {
+                            if (!isDown) return;
+                            e.preventDefault();
+                            const x = (e.pageX || e.touches[0].pageX) - track.offsetLeft;
+                            const walk = (x - startX) * 2;
+                            track.scrollLeft = scrollLeft - walk;
+                        }
+
+                        // Обработчики событий мыши и touch
+                        track.addEventListener('mousedown', startDragging);
+                        track.addEventListener('mouseleave', stopDragging);
+                        track.addEventListener('mouseup', stopDragging);
+                        track.addEventListener('mousemove', drag);
+                        track.addEventListener('touchstart', startDragging);
+                        track.addEventListener('touchend', stopDragging);
+                        track.addEventListener('touchcancel', stopDragging);
+                        track.addEventListener('touchmove', drag);
+
+                        // Обработчики для точек
+                        dots.forEach((dot, i) => {
+                            dot.addEventListener('click', () => {
+                                stopAutoScroll();
+                                const step = stepWidth();
+                                track.scrollTo({
+                                    left: i * step,
+                                    behavior: 'smooth'
+                                });
+                                setTimeout(startAutoScroll, 1000);
+                            });
+                        });
+
+                        // Обработчики для скролла и ресайза
+                        track.addEventListener('scroll', updateDots, { passive: true });
+                        window.addEventListener('resize', updateDots);
+
+                        // Очистка при закрытии
+                        overlayClose.addEventListener('click', stopAutoScroll);
+                        overlayModal.addEventListener('click', (e) => {
+                            if (e.target === overlayModal) stopAutoScroll();
+                        });
+
+                        // Запускаем автопрокрутку и точки
+                        updateDots();
+                        startAutoScroll();
+                    });
+                } else {
+                    openOverlay(`
+                        <div class="about-content">
+                            <h2>Извините</h2>
+                            <p>Не удалось загрузить информацию о преподавателях. Пожалуйста, попробуйте позже.</p>
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading teacher files:', error);
+                openOverlay(`
+                    <div class="about-content">
+                        <h2>Ошибка</h2>
+                        <p>Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.</p>
+                    </div>
+                `);
             });
-        });
         });
         }
     });
