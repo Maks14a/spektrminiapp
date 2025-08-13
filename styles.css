@@ -370,19 +370,19 @@ body {
   position: absolute;
   top: 20px;
   left: 20px;
-  width: auto; /* убрали фиксированный размер */
+  width: auto;
   height: auto;
-  background: none; /* убрали фон */
-  border: none; /* убрали рамку */
-  border-radius: 0;
+  background: none !important; /* убираем фон везде */
+  border: none !important; /* убираем рамки */
+  border-radius: 0 !important;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   z-index: 100;
-  box-shadow: none; /* убрали тень */
+  box-shadow: none !important; /* убираем тень */
   transition: transform 0.2s ease;
-  padding: 0; /* убрали внутренние отступы */
+  padding: 0;
 }
 
 .back-button:hover {
@@ -390,9 +390,9 @@ body {
 }
 
 .back-button::before {
-  content: '✖'; /* крестик */
+  content: '✖';
   font-size: 28px;
-  color: #fcb900; /* жёлтый цвет, как на кнопках */
+  color: #fcb900; /* жёлтый крестик */
   line-height: 1;
   font-weight: 100;
 }
@@ -462,3 +462,4 @@ body {
   -webkit-user-select: none;
   -ms-user-select: none;
 }
+
