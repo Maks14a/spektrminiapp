@@ -167,9 +167,9 @@
         <img src="logo3.png" alt="Логотип" class="footer-logo-static" />
     </div>
 
-<script>
+</script>
     document.addEventListener('DOMContentLoaded', () => {
-
+    
         /* ---------- DOM Element References ---------- */
         const introScreen = document.getElementById('intro-screen');
         const introVideo = document.getElementById('intro-video');
@@ -183,164 +183,162 @@
         const eventsCarousel = document.getElementById('events-carousel');
         const eventsPagination = document.getElementById('events-pagination');
         const allScreens = [mainContent, appointmentScreen, eventsScreen];
-
-        let autoScrollInterval; // Переменная для хранения ID интервала автоматической прокрутки
-        let numOriginalItems = 0; // Количество оригинальных элементов в карусели
-
+    
+        let autoScrollInterval;
+        let numOriginalItems = 0;
+        
+        // НОВОЕ: Флаг для отслеживания состояния интро
+        let isIntroFinished = false;
+    
         /* =================================================================
-           BUG FIX: Centralized function to handle screen transitions
-           This prevents multiple screens from having the 'show' class at
-           the same time, fixing the overlap issue.
+           ОБНОВЛЕНО: Централизованная функция для переключения экранов.
            ================================================================= */
         function switchScreen(screenToShow) {
+            // Устанавливаем плавное поведение прокрутки по умолчанию
+            eventsCarousel.style.scrollBehavior = 'smooth'; 
+    
             allScreens.forEach(screen => {
-                // Remove 'show' from all screens except the target one
                 if (screen !== screenToShow) {
                     screen.classList.remove('show');
                 }
             });
-            // Add 'show' to the target screen
             screenToShow.classList.add('show');
-
-            // Управление интервалом автоматической прокрутки
+            
             if (screenToShow === eventsScreen) {
-                // Если переходим на экран событий, запускаем автоматическую прокрутку
                 startAutoScroll();
             } else {
-                // Если переходим на другой экран, останавливаем автоматическую прокрутку
                 stopAutoScroll();
             }
         }
-
+        
         /* =================================================================
-           ИЗМЕНЕНО: Новая функция для завершения интро.
-           Она скрывает интро и решает, какой экран показать,
-           не конфликтуя с выбором пользователя.
+            ОБНОВЛЕНО: Функция для завершения интро.
+            Она устанавливает флаг `isIntroFinished` и показывает главный экран,
+            только если пользователь ещё не перешёл на другой.
            ================================================================= */
         function finishIntro() {
-            // Если интро уже скрыто, ничего не делаем.
-            if (introScreen.classList.contains('hidden')) {
+            // Если интро уже завершено, ничего не делаем.
+            if (isIntroFinished) {
                 return;
             }
-
+    
             introScreen.classList.add('hidden');
-
+            
+            // Устанавливаем флаг в true
+            isIntroFinished = true;
+    
             // Проверяем, был ли уже показан какой-либо экран пользователем.
             const aScreenIsAlreadyShown = allScreens.some(screen => screen.classList.contains('show'));
-
-            // Если ни один экран еще не активен, показываем главный.
+            
+            // Если ни один экран ещё не активен, показываем главный.
             if (!aScreenIsAlreadyShown) {
                 switchScreen(mainContent);
             }
         }
-
+    
         /* ---------- Screen Transition Logic ---------- */
-        // ИЗМЕНЕНО: Теперь обработчик 'ended' вызывает новую функцию finishIntro.
+        // Обработчик `ended` для видео
         introVideo.addEventListener('ended', finishIntro);
-
+    
         const playPromise = introVideo.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
                 console.error("Autoplay was blocked:", error);
-                // ИЗМЕНЕНО: Если автопроигрывание заблокировано, сразу вызываем finishIntro.
+                // Если автопроигрывание заблокировано, сразу вызываем finishIntro.
                 finishIntro();
             });
         }
-
-        // ИЗМЕНЕНО: Fallback таймер также вызывает finishIntro.
+    
+        // Fallback таймер
         setTimeout(() => {
             finishIntro();
-        }, 5000); // 5 секунд
-
-        showAppointmentBtn.onclick = () => switchScreen(appointmentScreen);
-
-        showEventsBtn.onclick = () => {
-            switchScreen(eventsScreen);
-            loadEvents(); // Load events when switching to the screen
+        }, 5000);
+    
+        // ИСПРАВЛЕНО: Теперь обработчики кликов сначала проверяют, завершилось ли интро.
+        showAppointmentBtn.onclick = () => {
+            if (!isIntroFinished) return; // Игнорируем нажатие, если интро ещё не закончилось
+            switchScreen(appointmentScreen);
         };
-
-        backToMainFromAppointmentBtn.onclick = () => switchScreen(mainContent);
-        backToMainFromEventsBtn.onclick = () => switchScreen(mainContent);
-
+    
+        showEventsBtn.onclick = () => {
+            if (!isIntroFinished) return; // Игнорируем нажатие
+            switchScreen(eventsScreen);
+            loadEvents();
+        };
+    
+        backToMainFromAppointmentBtn.onclick = () => {
+            switchScreen(mainContent);
+        };
+    
+        backToMainFromEventsBtn.onclick = () => {
+            switchScreen(mainContent);
+        };
+    
         /* =================================================================
-           PAGINATION FIX: Improved correlation between dots and slides
+           Остальной код — без изменений
            ================================================================= */
-
-        // Helper to calculate the width of a single carousel item including its gap
+        
         function getSlideStep() {
-            // Убедимся, что есть хотя бы один элемент для измерения
             if (eventsCarousel.children.length === 0) return 0;
-
             const firstItem = eventsCarousel.children[0];
-            // Используем clientWidth для ширины элемента, и получаем margin-right из стилей
             const itemWidth = firstItem.clientWidth;
             const style = window.getComputedStyle(firstItem);
             const marginRight = parseFloat(style.marginRight);
-
             return itemWidth + marginRight;
         }
-
+    
         function createDots() {
             eventsPagination.innerHTML = '';
-            // Точки создаются только для оригинальных элементов
             if (numOriginalItems === 0) return;
-
+    
             const slideStep = getSlideStep();
             if (slideStep === 0) return;
-
+    
             for (let i = 0; i < numOriginalItems; i++) {
                 const dot = document.createElement('span');
                 dot.className = 'pagination-dot';
                 dot.addEventListener('click', () => {
-                    // Прокрутка к соответствующему оригинальному элементу
-                    // Учитываем смещение из-за клонированных элементов
                     eventsCarousel.scrollTo({ left: (i + numOriginalItems) * slideStep, behavior: 'smooth' });
                 });
                 eventsPagination.appendChild(dot);
             }
             updateDots();
         }
-
+    
         function updateDots() {
             const dots = eventsPagination.querySelectorAll('.pagination-dot');
             if (eventsCarousel.children.length === 0 || numOriginalItems === 0) {
                 dots.forEach(dot => dot.classList.remove('active'));
                 return;
             }
-
+    
             const slideStep = getSlideStep();
-            if(slideStep === 0) return;
-
-            // Смещаем scrollLeft, чтобы он соответствовал "реальным" элементам
+            if (slideStep === 0) return;
+    
             const adjustedScrollLeft = eventsCarousel.scrollLeft - (numOriginalItems * slideStep);
-
-            // Вычисляем активный индекс, округляя до ближайшего целого
             let activeIndex = Math.round(adjustedScrollLeft / slideStep);
-
-            // Убедимся, что activeIndex находится в пределах оригинальных элементов
+    
             if (activeIndex < 0) {
                 activeIndex = (numOriginalItems + (activeIndex % numOriginalItems)) % numOriginalItems;
             } else if (activeIndex >= numOriginalItems) {
                 activeIndex = activeIndex % numOriginalItems;
             }
-
+    
             dots.forEach((dot, index) => {
                 dot.classList.toggle('active', index === activeIndex);
             });
         }
-        // Слушатель событий для обновления точек пагинации и бесконечной прокрутки
+    
         eventsCarousel.addEventListener('scroll', () => {
             updateDots();
-            handleInfiniteScroll(); // Вызываем функцию бесконечной прокрутки
+            handleInfiniteScroll();
         }, { passive: true });
-
-
-        /* ---------- Events Loading Logic ---------- */
+    
         const API_STATIC = "https://apispectrminiapp-vozmak.amvera.io/static/";
         const API_FILES = "https://apispectrminiapp-vozmak.amvera.io/files";
         const API_TEACHERS_STATIC = "https://apispectrminiapp-vozmak.amvera.io/static/Teachers/";
         const API_TEACHERS_FILES = "https://apispectrminiapp-vozmak.amvera.io/teachers/files";
-
+    
         async function loadEvents() {
             try {
                 const filesResponse = await fetch(API_FILES);
@@ -349,55 +347,43 @@
                 const originalMediaFiles = filesData.files.filter(filename =>
                     filename.match(/\.(jpeg|jpg|gif|png|webp|avif|mp4)$/i)
                 ) || [];
-
-                eventsCarousel.innerHTML = ''; // Очищаем карусель перед загрузкой
-
+    
+                eventsCarousel.innerHTML = '';
+    
                 if (originalMediaFiles.length > 0) {
-                    numOriginalItems = originalMediaFiles.length; // Сохраняем количество оригинальных элементов
-
-                    // Клонируем элементы для создания эффекта бесконечной прокрутки
-                    // Клонируем последние элементы для начала
+                    numOriginalItems = originalMediaFiles.length;
                     const clonedBefore = originalMediaFiles.slice(-numOriginalItems);
-                    // Клонируем первые элементы для конца
                     const clonedAfter = originalMediaFiles.slice(0, numOriginalItems);
-
-                    // Объединяем: [клонированные_последние, оригинальные, клонированные_первые]
                     const combinedMedia = [...clonedBefore, ...originalMediaFiles, ...clonedAfter];
-
+    
                     combinedMedia.forEach(filename => {
                         const mediaUrl = `${API_STATIC}${filename}`;
                         const fileExtension = filename.split('.').pop().toLowerCase();
                         const isVideo = fileExtension === 'mp4';
-
+    
                         const eventDiv = document.createElement('div');
                         eventDiv.className = 'event-card';
-
+    
                         let mediaElementHtml;
                         if (isVideo) {
                             mediaElementHtml = `<video src="${mediaUrl}" class="event-image" autoplay loop muted playsinline></video>`;
                         } else {
                             mediaElementHtml = `<img src="${mediaUrl}" alt="Event Image" class="event-image">`;
                         }
-
                         eventDiv.innerHTML = `${mediaElementHtml}`;
                         eventsCarousel.appendChild(eventDiv);
                     });
-
-                    // Теперь, когда все элементы добавлены, можно получить точный slideStep
+    
                     const slideStep = getSlideStep();
                     if (slideStep > 0) {
-                        // Устанавливаем начальную позицию прокрутки на начало "реального" контента
                         eventsCarousel.scrollLeft = numOriginalItems * slideStep;
                     }
-
-                    createDots(); // Создаем точки пагинации для оригинальных элементов
-
+                    createDots();
                 } else {
                     eventsCarousel.innerHTML = '<p class="no-events">Пока нет предстоящих событий.</p>';
-                    eventsPagination.innerHTML = ''; // Очищаем точки, если нет событий
-                    numOriginalItems = 0; // Сбрасываем количество оригинальных элементов
+                    eventsPagination.innerHTML = '';
+                    numOriginalItems = 0;
                 }
-
             } catch (error) {
                 console.error('Error loading event files:', error);
                 eventsCarousel.innerHTML = '<p class="error-message">Не удалось загрузить события. Попробуйте позже.</p>';
@@ -405,81 +391,58 @@
                 numOriginalItems = 0;
             }
         }
-
-        /* =================================================================
-           NEW FEATURE: Automatic Carousel Scrolling and Looping
-           ================================================================= */
+    
         function startAutoScroll() {
-            // Очищаем существующий интервал, чтобы не запускать несколько
             stopAutoScroll();
-
             autoScrollInterval = setInterval(() => {
                 if (numOriginalItems === 0) return;
                 const slideStep = getSlideStep();
                 if (slideStep === 0) return;
-
-                // Просто прокручиваем на один шаг; handleInfiniteScroll будет управлять зацикливанием
                 eventsCarousel.scrollBy({ left: slideStep, behavior: 'smooth' });
-            }, 7000); // 7 секунд
+            }, 7000);
         }
-
+    
         function stopAutoScroll() {
             if (autoScrollInterval) {
                 clearInterval(autoScrollInterval);
                 autoScrollInterval = null;
             }
         }
-
-        /* =================================================================
-           NEW FEATURE: Infinite Carousel Scrolling Logic
-           ================================================================= */
+    
         function handleInfiniteScroll() {
             if (numOriginalItems === 0) return;
-
             const slideStep = getSlideStep();
             if (slideStep === 0) return;
-
             const currentScrollLeft = eventsCarousel.scrollLeft;
-
-            // Позиция начала "реального" контента (после клонированных элементов в начале)
             const startOfRealContent = numOriginalItems * slideStep;
-            // Позиция конца "реального" контента (конец оригинальных элементов)
-            const endOfRealContent = (numOriginalItems * 2) * slideStep; // (клонированные_до + оригинальные)
-
-            // Если прокрутили до клонированных элементов в конце (справа)
+            const endOfRealContent = (numOriginalItems * 2) * slideStep;
+            
             if (currentScrollLeft >= endOfRealContent) {
-                eventsCarousel.style.scrollBehavior = 'auto'; // Временно отключаем плавную прокрутку
-                // Мгновенно перепрыгиваем к началу "реального" контента
+                eventsCarousel.style.scrollBehavior = 'auto';
                 eventsCarousel.scrollLeft = startOfRealContent + (currentScrollLeft - endOfRealContent);
-                // Включаем плавную прокрутку обратно после короткой задержки для рендеринга
                 requestAnimationFrame(() => {
                     eventsCarousel.style.scrollBehavior = 'smooth';
                 });
-            }
-            // Если прокрутили до клонированных элементов в начале (слева)
-            else if (currentScrollLeft < startOfRealContent) {
-                eventsCarousel.style.scrollBehavior = 'auto'; // Временно отключаем плавную прокрутку
-                // Мгновенно перепрыгиваем к концу "реального" контента
+            } else if (currentScrollLeft < startOfRealContent) {
+                eventsCarousel.style.scrollBehavior = 'auto';
                 eventsCarousel.scrollLeft = endOfRealContent - (startOfRealContent - currentScrollLeft);
-                // Включаем плавную прокрутку обратно после короткой задержки
                 requestAnimationFrame(() => {
                     eventsCarousel.style.scrollBehavior = 'smooth';
                 });
             }
         }
-
-
+    
         /* ---------- DIKIDI Widget Logic ---------- */
         const WIDGET_URL = 'https://dikidi.ru/#widget=190962';
         const btnBook = document.getElementById('dikidi-book-btn');
         btnBook.addEventListener('click', openDikidiModal);
-
+    
         function openDikidiModal() {
             if (document.querySelector('.dikidi-modal')) return;
-
+    
             const modal = document.createElement('div');
             modal.className = 'dikidi-modal';
-
+    
             const close = document.createElement('span');
             close.className = 'dikidi-close';
             close.textContent = '×';
@@ -487,53 +450,52 @@
                 modal.classList.remove('show');
                 setTimeout(() => modal.remove(), 250);
             };
-
+    
             const loader = document.createElement('div');
             loader.className = 'dikidi-loader';
-
+    
             const frame = document.createElement('iframe');
             frame.src = WIDGET_URL;
             frame.className = 'dikidi-iframe';
             frame.allow = 'payment *; fullscreen';
-
+    
             frame.style.width = `${window.innerWidth}px`;
             frame.style.height = `${window.innerHeight}px`;
-
+    
             frame.onload = () => {
                 loader.remove();
                 frame.classList.add('loaded');
             };
-
+    
             modal.appendChild(loader);
             modal.appendChild(frame);
             modal.appendChild(close);
             document.body.appendChild(modal);
             requestAnimationFrame(() => modal.classList.add('show'));
         }
-
+    
         /* ---------- Carousel Dragging Logic ---------- */
         let isDown = false;
         let startX;
         let scrollLeft;
-        let wheelTimeout; // Переменная для таймаута колеса мыши
-
+        let wheelTimeout;
+    
         function startDragging(e) {
             isDown = true;
             eventsCarousel.classList.add('dragging');
             startX = (e.pageX || e.touches[0].pageX) - eventsCarousel.offsetLeft;
             scrollLeft = eventsCarousel.scrollLeft;
-            stopAutoScroll(); // Останавливаем автопрокрутку при ручном взаимодействии
+            stopAutoScroll();
         }
-
+    
         function stopDragging() {
             isDown = false;
             eventsCarousel.classList.remove('dragging');
-            // При отпускании мыши/пальца, перезапускаем автопрокрутку, если мы на экране событий
             if (eventsScreen.classList.contains('show')) {
                 startAutoScroll();
             }
         }
-
+    
         function drag(e) {
             if (!isDown) return;
             e.preventDefault();
@@ -541,246 +503,226 @@
             const walk = (x - startX) * 2;
             eventsCarousel.scrollLeft = scrollLeft - walk;
         }
-
-        // Mouse events
+    
         eventsCarousel.addEventListener('mousedown', startDragging);
         eventsCarousel.addEventListener('mouseleave', stopDragging);
         eventsCarousel.addEventListener('mouseup', stopDragging);
         eventsCarousel.addEventListener('mousemove', drag);
-
-        // Touch events
         eventsCarousel.addEventListener('touchstart', startDragging);
         eventsCarousel.addEventListener('touchend', stopDragging);
         eventsCarousel.addEventListener('touchcancel', stopDragging);
         eventsCarousel.addEventListener('touchmove', drag);
-
-        // --- Mouse Wheel Scrolling ---
+    
         eventsCarousel.addEventListener('wheel', (e) => {
-            if (e.deltaY !== 0) { // Prevent page scroll only for vertical wheel
+            if (e.deltaY !== 0) {
                 e.preventDefault();
                 eventsCarousel.scrollLeft += e.deltaY;
-                stopAutoScroll(); // Останавливаем автопрокрутку при ручной прокрутке
-                // Можно добавить таймаут для перезапуска автопрокрутки после короткой паузы
-                clearTimeout(wheelTimeout); // Используем wheelTimeout
+                stopAutoScroll();
+                clearTimeout(wheelTimeout);
                 wheelTimeout = setTimeout(() => {
                     if (eventsScreen.classList.contains('show')) {
                         startAutoScroll();
                     }
-                }, 1000); // Перезапустить через 1 секунду после последнего вращения колеса
+                }, 1000);
             }
         });
-
-        // Устанавливаем scroll-behavior: smooth по умолчанию для плавной прокрутки
+    
         eventsCarousel.style.scrollBehavior = 'smooth';
-
-        // === Модалка «О нас» и «Педагоги» ===
-        const aboutCircle    = document.getElementById('about-circle');
+    
+        const aboutCircle = document.getElementById('about-circle');
         const teachersCircle = document.getElementById('teachers-circle');
-        const overlayModal   = document.getElementById('overlay-modal');
+        const overlayModal = document.getElementById('overlay-modal');
         const overlayContent = document.getElementById('overlay-content');
-        const overlayClose   = document.getElementById('overlay-close');
-
+        const overlayClose = document.getElementById('overlay-close');
+    
         function openOverlay(innerHTML){
-        overlayContent.innerHTML = innerHTML;
-        overlayModal.classList.add('show');
-        document.body.style.overflow = 'hidden';
+            overlayContent.innerHTML = innerHTML;
+            overlayModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
         }
         function closeOverlay(){
-        overlayModal.classList.remove('show');
-        overlayContent.classList.remove('gallery-open'); // если ранее был фуллскрин
-        overlayContent.classList.remove('gallery-fit');  // <-- добавь это
-        overlayContent.innerHTML = '';
-        document.body.style.overflow = '';
+            overlayModal.classList.remove('show');
+            overlayContent.classList.remove('gallery-open');
+            overlayContent.classList.remove('gallery-fit');
+            overlayContent.innerHTML = '';
+            document.body.style.overflow = '';
         }
-
-
-        // Закрытие
+    
         overlayClose.addEventListener('click', closeOverlay);
         overlayModal.addEventListener('click', (e) => {
-        if (e.target === overlayModal) closeOverlay();
+            if (e.target === overlayModal) closeOverlay();
         });
-
-        // «О нас» → текст
+    
         if (aboutCircle) {
-        aboutCircle.addEventListener('click', () => {
-            overlayContent.classList.remove('gallery-open'); // <= важно
-            overlayContent.classList.remove('gallery-fit');
-            openOverlay(`
-            <div class="about-content">
-                <h2 style="margin:0 0 10px 0;">О нас</h2>
-                <p><strong>Вокальная студия «Спектр»</strong> – это не просто школа, это второй дом.</p>
-                <p><strong>Здесь вы сможете:</strong></p>
-                <p>💛 Работать над вокальной техникой и преодолевать страхи.</p>
-                <p>💛 Узнавать себя, развивать уверенность и творческую индивидуальность.</p>
-                <p>💛 Учиться тому, как голос передаёт настоящие эмоции.</p>
-                </ul>
-                <p>Мы соблюдаем баланс строгости и уюта: вы почувствуете себя как дома, но при этом будете расти, совершенствоваться и преодолевать свои границы.</p>
-                <p><strong>💛 Ваш успех — наша цель, и мы будем рядом с вами, рука об руку.</strong></p>
-            </div>
-            `);
-        });
-        }
-
-        // «Педагоги» → карусель из 2 изображений
-        if (teachersCircle) {
-        teachersCircle.addEventListener('click', () => {
-        overlayContent.classList.add('gallery-open'); // <= включили режим
-        overlayContent.classList.add('gallery-fit');
-        // Загружаем данные о преподавателях
-        fetch(API_TEACHERS_FILES)
-            .then(response => {
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return response.json();
-            })
-            .then(data => {
-                const teacherFiles = data.files.filter(filename =>
-                    filename.match(/\.(jpeg|jpg|gif|png|webp|avif)$/i)
-                ) || [];
-
-                if (teacherFiles.length > 0) {
-                    // Создаем HTML для галереи
-                    const galleryHTML = `
-                        <div class="gallery">
-                            <div class="gallery-track" id="gallery-track">
-                                ${teacherFiles.map(filename => `
-                                    <img src="${API_TEACHERS_STATIC}${filename}"
-                                         class="gallery-item"
-                                         alt="Преподаватель">`
-                                ).join('')}
-                            </div>
-                            <div class="gallery-dots" id="gallery-dots">
-                                ${teacherFiles.map((_, index) => `
-                                    <span class="gallery-dot ${index === 0 ? 'active' : ''}"></span>`
-                                ).join('')}
-                            </div>
-                        </div>
-                    `;
-                    openOverlay(galleryHTML);
-
-                    // Инициализация галереи после её создания
-                    requestAnimationFrame(() => {
-                        const track = document.getElementById('gallery-track');
-                        const dots = document.querySelectorAll('#gallery-dots .gallery-dot');
-                        let isDown = false;
-                        let startX;
-                        let scrollLeft;
-                        let autoScrollInterval;                        function stepWidth() {
-                            const firstItem = track.querySelector('.gallery-item');
-                            if (!firstItem) return track.clientWidth;
-                            const styles = getComputedStyle(firstItem);
-                            const width = firstItem.clientWidth;
-                            const marginRight = parseFloat(styles.marginRight) || 0;
-                            return width + marginRight;
-                        }
-
-                        function updateDots() {
-                            const step = stepWidth();
-                            if (step === 0) return;
-                            const idx = Math.round(track.scrollLeft / step);
-                            dots.forEach((dot, i) => {
-                                dot.classList.toggle('active', i === idx);
-                            });
-                        }
-
-                        // Функции для автопрокрутки
-                        function startAutoScroll() {
-                            stopAutoScroll();
-                            autoScrollInterval = setInterval(() => {
-                                const step = stepWidth();
-                                if (track.scrollLeft >= (track.scrollWidth - track.clientWidth)) {
-                                    track.scrollTo({ left: 0, behavior: 'smooth' });
-                                } else {
-                                    track.scrollBy({ left: step, behavior: 'smooth' });
-                                }
-                            }, 7000);
-                        }
-
-                        function stopAutoScroll() {
-                            if (autoScrollInterval) {
-                                clearInterval(autoScrollInterval);
-                                autoScrollInterval = null;
-                            }
-                        }
-
-                        // Функции для перетаскивания
-                        function startDragging(e) {
-                            isDown = true;
-                            track.classList.add('dragging');
-                            startX = (e.pageX || e.touches[0].pageX) - track.offsetLeft;
-                            scrollLeft = track.scrollLeft;
-                            stopAutoScroll();
-                        }
-
-                        function stopDragging() {
-                            isDown = false;
-                            track.classList.remove('dragging');
-                            startAutoScroll();
-                        }
-
-                        function drag(e) {
-                            if (!isDown) return;
-                            e.preventDefault();
-                            const x = (e.pageX || e.touches[0].pageX) - track.offsetLeft;
-                            const walk = (x - startX) * 2;
-                            track.scrollLeft = scrollLeft - walk;
-                        }
-
-                        // Обработчики событий мыши и touch
-                        track.addEventListener('mousedown', startDragging);
-                        track.addEventListener('mouseleave', stopDragging);
-                        track.addEventListener('mouseup', stopDragging);
-                        track.addEventListener('mousemove', drag);
-                        track.addEventListener('touchstart', startDragging);
-                        track.addEventListener('touchend', stopDragging);
-                        track.addEventListener('touchcancel', stopDragging);
-                        track.addEventListener('touchmove', drag);
-
-                        // Обработчики для точек
-                        dots.forEach((dot, i) => {
-                            dot.addEventListener('click', () => {
-                                stopAutoScroll();
-                                const step = stepWidth();
-                                track.scrollTo({
-                                    left: i * step,
-                                    behavior: 'smooth'
-                                });
-                                setTimeout(startAutoScroll, 1000);
-                            });
-                        });
-
-                        // Обработчики для скролла и ресайза
-                        track.addEventListener('scroll', updateDots, { passive: true });
-                        window.addEventListener('resize', updateDots);
-
-                        // Очистка при закрытии
-                        overlayClose.addEventListener('click', stopAutoScroll);
-                        overlayModal.addEventListener('click', (e) => {
-                            if (e.target === overlayModal) stopAutoScroll();
-                        });
-
-                        // Запускаем автопрокрутку и точки
-                        updateDots();
-                        startAutoScroll();
-                    });
-                } else {
-                    openOverlay(`
-                        <div class="about-content">
-                            <h2>Извините</h2>
-                            <p>Не удалось загрузить информацию о преподавателях. Пожалуйста, попробуйте позже.</p>
-                        </div>
-                    `);
-                }
-            })
-            .catch(error => {
-                console.error('Error loading teacher files:', error);
+            aboutCircle.addEventListener('click', () => {
+                overlayContent.classList.remove('gallery-open');
+                overlayContent.classList.remove('gallery-fit');
                 openOverlay(`
-                    <div class="about-content">
-                        <h2>Ошибка</h2>
-                        <p>Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.</p>
-                    </div>
+                <div class="about-content">
+                    <h2 style="margin:0 0 10px 0;">О нас</h2>
+                    <p><strong>Вокальная студия «Спектр»</strong> – это не просто школа, это второй дом.</p>
+                    <p><strong>Здесь вы сможете:</strong></p>
+                    <p>💛 Работать над вокальной техникой и преодолевать страхи.</p>
+                    <p>💛 Узнавать себя, развивать уверенность и творческую индивидуальность.</p>
+                    <p>💛 Учиться тому, как голос передаёт настоящие эмоции.</p>
+                    </ul>
+                    <p>Мы соблюдаем баланс строгости и уюта: вы почувствуете себя как дома, но при этом будете расти, совершенствоваться и преодолевать свои границы.</p>
+                    <p><strong>💛 Ваш успех — наша цель, и мы будем рядом с вами, рука об руку.</strong></p>
+                </div>
                 `);
             });
-        });
+        }
+    
+        if (teachersCircle) {
+            teachersCircle.addEventListener('click', () => {
+                overlayContent.classList.add('gallery-open');
+                overlayContent.classList.add('gallery-fit');
+                fetch(API_TEACHERS_FILES)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        const teacherFiles = data.files.filter(filename =>
+                            filename.match(/\.(jpeg|jpg|gif|png|webp|avif)$/i)
+                        ) || [];
+    
+                        if (teacherFiles.length > 0) {
+                            const galleryHTML = `
+                                <div class="gallery">
+                                    <div class="gallery-track" id="gallery-track">
+                                        ${teacherFiles.map(filename => `
+                                            <img src="${API_TEACHERS_STATIC}${filename}"
+                                                class="gallery-item"
+                                                alt="Преподаватель">`
+                                        ).join('')}
+                                    </div>
+                                    <div class="gallery-dots" id="gallery-dots">
+                                        ${teacherFiles.map((_, index) => `
+                                            <span class="gallery-dot ${index === 0 ? 'active' : ''}"></span>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                            `;
+                            openOverlay(galleryHTML);
+    
+                            requestAnimationFrame(() => {
+                                const track = document.getElementById('gallery-track');
+                                const dots = document.querySelectorAll('#gallery-dots .gallery-dot');
+                                let isDown = false;
+                                let startX;
+                                let scrollLeft;
+                                let autoScrollInterval;
+                                function stepWidth() {
+                                    const firstItem = track.querySelector('.gallery-item');
+                                    if (!firstItem) return track.clientWidth;
+                                    const styles = getComputedStyle(firstItem);
+                                    const width = firstItem.clientWidth;
+                                    const marginRight = parseFloat(styles.marginRight) || 0;
+                                    return width + marginRight;
+                                }
+    
+                                function updateDots() {
+                                    const step = stepWidth();
+                                    if (step === 0) return;
+                                    const idx = Math.round(track.scrollLeft / step);
+                                    dots.forEach((dot, i) => {
+                                        dot.classList.toggle('active', i === idx);
+                                    });
+                                }
+    
+                                function startAutoScroll() {
+                                    stopAutoScroll();
+                                    autoScrollInterval = setInterval(() => {
+                                        const step = stepWidth();
+                                        if (track.scrollLeft >= (track.scrollWidth - track.clientWidth)) {
+                                            track.scrollTo({ left: 0, behavior: 'smooth' });
+                                        } else {
+                                            track.scrollBy({ left: step, behavior: 'smooth' });
+                                        }
+                                    }, 7000);
+                                }
+    
+                                function stopAutoScroll() {
+                                    if (autoScrollInterval) {
+                                        clearInterval(autoScrollInterval);
+                                        autoScrollInterval = null;
+                                    }
+                                }
+    
+                                function startDragging(e) {
+                                    isDown = true;
+                                    track.classList.add('dragging');
+                                    startX = (e.pageX || e.touches[0].pageX) - track.offsetLeft;
+                                    scrollLeft = track.scrollLeft;
+                                    stopAutoScroll();
+                                }
+    
+                                function stopDragging() {
+                                    isDown = false;
+                                    track.classList.remove('dragging');
+                                    startAutoScroll();
+                                }
+    
+                                function drag(e) {
+                                    if (!isDown) return;
+                                    e.preventDefault();
+                                    const x = (e.pageX || e.touches[0].pageX) - track.offsetLeft;
+                                    const walk = (x - startX) * 2;
+                                    track.scrollLeft = scrollLeft - walk;
+                                }
+    
+                                track.addEventListener('mousedown', startDragging);
+                                track.addEventListener('mouseleave', stopDragging);
+                                track.addEventListener('mouseup', stopDragging);
+                                track.addEventListener('mousemove', drag);
+                                track.addEventListener('touchstart', startDragging);
+                                track.addEventListener('touchend', stopDragging);
+                                track.addEventListener('touchcancel', stopDragging);
+                                track.addEventListener('touchmove', drag);
+    
+                                dots.forEach((dot, i) => {
+                                    dot.addEventListener('click', () => {
+                                        stopAutoScroll();
+                                        const step = stepWidth();
+                                        track.scrollTo({
+                                            left: i * step,
+                                            behavior: 'smooth'
+                                        });
+                                        setTimeout(startAutoScroll, 1000);
+                                    });
+                                });
+    
+                                track.addEventListener('scroll', updateDots, { passive: true });
+                                window.addEventListener('resize', updateDots);
+    
+                                overlayClose.addEventListener('click', stopAutoScroll);
+                                overlayModal.addEventListener('click', (e) => {
+                                    if (e.target === overlayModal) stopAutoScroll();
+                                });
+    
+                                updateDots();
+                                startAutoScroll();
+                            });
+                        } else {
+                            openOverlay(`
+                                <div class="about-content">
+                                    <h2>Извините</h2>
+                                    <p>Не удалось загрузить информацию о преподавателях. Пожалуйста, попробуйте позже.</p>
+                                </div>
+                            `);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading teacher files:', error);
+                        openOverlay(`
+                            <div class="about-content">
+                                <h2>Ошибка</h2>
+                                <p>Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.</p>
+                            </div>
+                        `);
+                    });
+            });
         }
     });
 </script>
@@ -790,5 +732,6 @@
     <script src="https://dikidi.ru/assets/js/widget_record/widget2.min.js?v=1735141723"></script>
 </body>
 </html>
+
 
 
