@@ -462,3 +462,104 @@ body {
   -webkit-user-select: none;
   -ms-user-select: none;
 }
+
+/* Кружки кликабельны */
+.circle-img { cursor: pointer; }
+
+/* ===== Общая модалка ===== */
+.overlay-modal{
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center;
+  background:rgba(0,0,0,.72); z-index:3000; padding:18px;
+}
+.overlay-modal.show{ display:flex; }
+.overlay-close{
+  position:fixed; top:16px; right:16px;
+  background:none; border:none; padding:0;
+  color:#fcb900; font-size:34px; line-height:1; cursor:pointer; z-index:3001;
+}
+.overlay-content{
+  max-width:min(940px,94vw); max-height:88vh;
+  overflow:auto; border-radius:16px;
+  background:rgba(37,38,37,.92);
+  border:1px solid rgba(255,255,255,.08);
+  color:#EDF1F2; padding:18px;
+}
+
+/* Текст «О нас» */
+.about-content p, .about-content li{ font-size:14px; line-height:1.4; }
+.about-content ul{ margin:10px 0 0; padding-left:18px; }
+
+/* Галерея для «Педагоги» */
+.gallery{ width:min(900px,94vw); }
+.gallery-track{
+  display:flex; gap:12px; overflow-x:auto;
+  scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+}
+.gallery-track::-webkit-scrollbar{ display:none; }
+.gallery-item{
+  flex:0 0 100%;
+  height:min(70vh,540px);
+  object-fit:contain; background:#000;
+  border-radius:10px; scroll-snap-align:center;
+}
+.gallery-dots{ display:flex; justify-content:center; gap:8px; margin-top:10px; }
+.gallery-dot{ width:24px; height:4px; background:#555; border-radius:2px; }
+.gallery-dot.active{ background:#fcb900; width:36px; }
+
+@media (max-width:480px){
+  .overlay-close{ font-size:28px; }
+  .about-content p, .about-content li{ font-size:13px; }
+}
+
+/* чуть опустим кружки, чтобы не перекрывали контент */
+.circle1{ top:70%; }
+.circle1-text{ top:70%; }
+
+/* --- Галерея в модалке: мобильный фуллскрин --- */
+.overlay-content.gallery-open{
+  padding: 0;
+  background: #000;
+  border: none;
+  max-width: 100vw;
+  max-height: 100svh; /* корректная высота на мобайле */
+}
+
+.gallery{
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  background: #000;
+}
+
+.gallery-track{
+  height: 100%;
+  display: flex;
+  gap: 0; /* без отступов между слайдами */
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gallery-item{
+  flex: 0 0 100vw;  /* каждый слайд = ширина экрана */
+  height: 100%;
+  object-fit: cover; /* заполняем экран, обрезаем лишнее */
+  user-select: none;
+  -webkit-user-drag: none;
+  background: #000;
+  scroll-snap-align: center;
+}
+
+.gallery-dots{
+  position: absolute;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.gallery-dot{ width: 24px; height: 4px; background:#555; border-radius:2px; }
+.gallery-dot.active{ background:#fcb900; width: 36px; }
+
