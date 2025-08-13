@@ -235,28 +235,22 @@
         }
 
         /* ---------- Screen Transition Logic ---------- */
-        introVideo.addEventListener('ended', () => {
-            introScreen.classList.add('hidden');
-            switchScreen(mainContent);
-        });
+        // ИЗМЕНЕНО: Теперь обработчик 'ended' вызывает новую функцию finishIntro.
+        introVideo.addEventListener('ended', finishIntro);
 
         const playPromise = introVideo.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
                 console.error("Autoplay was blocked:", error);
-                introScreen.classList.add('hidden');
-                switchScreen(mainContent);
+                // ИЗМЕНЕНО: Если автопроигрывание заблокировано, сразу вызываем finishIntro.
+                finishIntro();
             });
         }
 
-        // Fallback timer in case the 'ended' event doesn't fire
+        // ИЗМЕНЕНО: Fallback таймер также вызывает finishIntro.
         setTimeout(() => {
-            if (!mainContent.classList.contains('show')) {
-                console.warn("Intro seems stuck, forcing main screen.");
-                introScreen.classList.add('hidden');
-                switchScreen(mainContent);
-            }
-        }, 5000); // 5 seconds
+            finishIntro();
+        }, 5000); // 5 секунд
 
         showAppointmentBtn.onclick = () => switchScreen(appointmentScreen);
 
@@ -796,4 +790,5 @@
     <script src="https://dikidi.ru/assets/js/widget_record/widget2.min.js?v=1735141723"></script>
 </body>
 </html>
+
 
