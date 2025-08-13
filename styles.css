@@ -563,3 +563,93 @@ body {
 .gallery-dot{ width: 24px; height: 4px; background:#555; border-radius:2px; }
 .gallery-dot.active{ background:#fcb900; width: 36px; }
 
+/* --- Модалка: режим "по формату" --- */
+/* --- Галерея "по формату" без чёрных рамок --- */
+.overlay-content.gallery-fit{
+  padding: 0;
+  background: transparent;   /* было #000 — убрали */
+  border: none;
+  max-width: 100vw;
+  max-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Контейнер галереи */
+.gallery{
+  width: 100%;
+  height: auto;
+  background: transparent;   /* убрали чёрный фон */
+  display: flex;
+  justify-content: center;
+}
+
+/* Лента слайдов */
+.gallery-track{
+  display: flex;
+  gap: 8px;                  /* тонкий зазор между кадрами */
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 0;
+  margin: 0;
+}
+
+/* Слайд фиксированной ширины, картинка по формату */
+.slide{
+  flex: 0 0 clamp(280px, 92vw, 820px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+}
+
+/* Картинка без фона, вписывается без обрезки */
+.gallery-item{
+  max-width: 100%;
+  max-height: min(78svh, 820px);
+  object-fit: contain;
+  background: transparent;   /* было #000 — убрали */
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  border-radius: 0;          /* если нужно — 0, чтобы не казалось «рамкой» */
+}
+
+/* Ползунок под галереей */
+.gallery-slider{
+  width: clamp(280px, 92vw, 820px);
+  margin: 10px auto 8px;
+  display: flex;
+  align-items: center;
+}
+
+.gallery-slider input[type="range"]{
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #555;
+  border-radius: 2px;
+  outline: none;
+}
+
+/* Кружок ползунка */
+.gallery-slider input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fcb900;
+  border: none;
+  cursor: pointer;
+}
+.gallery-slider input[type="range"]::-moz-range-thumb{
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fcb900;
+  border: none;
+  cursor: pointer;
+}
+
