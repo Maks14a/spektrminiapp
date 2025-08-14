@@ -19,7 +19,6 @@ body {
   background-color: #252625;
   font-family: 'UNCAGE-VF', Arial, sans-serif;
   color: white;
-  min-height: 100vh;
 }
 
 
@@ -48,7 +47,7 @@ body {
 /* ===== ГЛАВНАЯ ===== */
 
 .logo {
-  width: min(400px, 90vw);
+  width: 400px;
   margin-top: -140px;
   margin-bottom: 0px;
 }
@@ -367,12 +366,10 @@ body {
     transform: translate(-50%, -50%);
 }
 
-/* ИЗМЕНЕНИЕ ЗДЕСЬ: стили для кнопки "Купить билет" */
 #request-btn {
-  margin-top: 10px; /* Увеличено, чтобы опустить кнопку ниже */
+  margin-top: -5px;
   margin-bottom: 6px;
   flex-shrink: 0;
-  width: 150px; /* Уменьшена ширина */
 }
 
 .footer-logo-static {
@@ -667,185 +664,4 @@ body {
   background: #fcb900;
   border: none;
   cursor: pointer;
-}
-.gallery-slider input[type="range"]::-ms-thumb{
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: #fcb900;
-  border: none;
-  cursor: pointer;
-}
-.gallery-slider-thumb-value{
-  font-size:14px; color:#fcb900; font-weight:bold; width:44px; text-align:center;
-}
-.gallery-slider-dots{
-  display:flex; flex-direction:column;
-  position:absolute; inset:0;
-  justify-content:space-between;
-  align-items:center; z-index:0;
-  pointer-events:none;
-}
-.gallery-slider-dot{
-  background:#777; height:2px; width:100%;
-}
-.gallery-slider-dot:first-child, .gallery-slider-dot:last-child{
-  height:4px;
-}
-.gallery-caption{
-  font-size:14px; text-align:center; margin-top:10px; line-height:1.4;
-}
-.gallery-caption strong{ color:#fcb900; }
-
-/* FIX: Адаптивность для кругов на главной */
-@media (min-width: 481px) and (max-width: 768px) {
-  .circle1 {
-    width: 120px;
-    height: 120px;
-    top: 50%;
-    left: 20px;
-  }
-  .circle1-text {
-    top: 50%;
-    left: 150px;
-  }
-  .circle2 {
-    width: 120px;
-    height: 120px;
-    top: 60%;
-    right: 20px;
-  }
-  .circle2-text {
-    top: 60%;
-    right: 150px;
-  }
-}
-
-@media (min-width: 769px) {
-  .circle1 {
-    width: 180px;
-    height: 180px;
-    top: 50%;
-    left: 10vw;
-  }
-  .circle1-text {
-    top: 50%;
-    left: calc(10vw + 200px);
-  }
-  .circle2 {
-    width: 180px;
-    height: 180px;
-    top: 60%;
-    right: 10vw;
-  }
-  .circle2-text {
-    top: 60%;
-    right: calc(10vw + 200px);
-  }
-  .buttons {
-    flex-direction: row;
-  }
-  .appointment-layout-grid {
-    max-width: 600px;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin: 0;
-  }
-  .image-circle {
-    width: 120px;
-    height: 120px;
-  }
-  .grid-button {
-    grid-column: 2 / 4;
-  }
-}
-
-/* FIX: Стили для Dikidi-модалки на ПК */
-.dikidi-modal {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.8);
-    z-index: 2000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
-    margin: 0;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.4s ease;
-    -webkit-overflow-scrolling: touch;
-    overflow: auto;
-}
-
-.dikidi-modal.show {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.dikidi-modal-content {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: #fff;
-    border-radius: 0;
-}
-
-/* Адаптируем Dikidi-модалку для ПК */
-@media (min-width: 769px) {
-    .dikidi-modal-content {
-        max-width: 800px;
-        max-height: 90vh;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-}
-
-.dikidi-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: #fff;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    box-sizing: border-box;
-}
-.dikidi-iframe.loaded {
-    opacity: 1;
-}
-
-.dikidi-close {
-    position: absolute;
-    top: 18px;
-    right: 22px;
-    font-size: 36px;
-    color: #fff;
-    cursor: pointer;
-    user-select: none;
-    line-height: 1;
-    z-index: 2002;
-    background: rgba(0,0,0,.3);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dikidi-loader {
-    border: 8px solid #555;
-    border-top: 8px solid rgb(240, 191, 76);
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    animation: spin 2s linear infinite;
-    position: absolute;
-    z-index: 2001;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
